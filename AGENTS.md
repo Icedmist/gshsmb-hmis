@@ -1,11 +1,15 @@
 # Build/Lint/Test Commands
 
-## Backend
-- Build: `cd backend && npm run build`
-- Dev: `cd backend && npm run dev`
-- Migrate: `cd backend && npm run migrate`
-- Seed: `cd backend && npm run seed`
+## Frontend (SPA - Firebase)
+- Install: `npm install`
+- Dev: `npm run dev`
+- Build: `npm run build`
+- Lint: `npm run lint`
+- Deploy: `firebase deploy`
+- Deploy Functions Only: `firebase deploy --only functions`
+- Deploy Rules Only: `firebase deploy --only firestore:rules`
 
-## Frontend
-- Dev: `cd frontend && npm run dev`
-- Build: `cd frontend && npm run build`
+## Cloud Functions
+- Install: `cd functions && npm install`
+- Build: `cd functions && npm run build`
+- Deploy: `firebase deploy --only functions`

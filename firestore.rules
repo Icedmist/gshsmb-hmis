@@ -1,0 +1,105 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to get user profile
+    function getUserProfile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && getUserProfile().role == 'super_admin';
+    }
+    
+    function isHospitalAdmin() {
+      return isAuthenticated() && getUserProfile().role == 'hospital_admin';
+    }
+    
+    function isHROfficer() {
+      return isAuthenticated() && getUserProfile().role == 'hr_officer';
+    }
+    
+    function isExecutiveSecretary() {
+      return isAuthenticated() && getUserProfile().role == 'executive_secretary';
+    }
+    
+    function canManage() {
+      return isAdmin() || isHospitalAdmin();
+    }
+    
+    function isOwnHospital(resourceHospitalId) {
+      return !isHospitalAdmin() || getUserProfile().hospital_id == resourceHospitalId;
+    }
+    
+    function isOwnUser(resourceId) {
+      return isAuthenticated() && request.auth.uid == resourceId;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      // Anyone authenticated can read users (for name lookups, etc.)
+      allow read: if isAuthenticated();
+      
+      // Only admins can create/update/delete users
+      // Note: User creation via Cloud Functions bypasses security rules
+      allow create: if isAdmin();
+      allow update: if isAdmin() || isOwnUser(userId);
+      allow delete: if isAdmin() && !isOwnUser(userId);
+    }
+
+    // Hospitals collection
+    match /hospitals/{hospitalId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Departments collection
+    match /departments/{deptId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() || isHospitalAdmin();
+      allow update: if isAdmin() || isHospitalAdmin();
+      allow delete: if isAdmin() || isHospitalAdmin();
+    }
+
+    // Employees collection
+    match /employees/{empId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() || isHospitalAdmin() || isHROfficer();
+      allow update: if isAdmin() || isHospitalAdmin() || isHROfficer();
+      allow delete: if isAdmin();
+    }
+
+    // Employee Transfers collection
+    match /employeeTransfers/{transferId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() || isHROfficer();
+      allow update: if isAdmin() || isHROfficer();
+      allow delete: if isAdmin();
+    }
+
+    // Audit Logs collection
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // Password Reset Tokens (legacy, not used with Firebase Auth)
+    match /passwordResetTokens/{tokenId} {
+      allow read, write: if false;
+    }
+
+    // Health check
+    match /_health/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}
