@@ -1,5 +1,3 @@
-import { collection, query, where, getDocs, limit as firestoreLimit } from 'firebase/firestore';
-import { db } from './firebase';
 import { getDocById, getDocsPaginated, addDocument, updateDocument, deleteDocument, type FilterConstraint, type PaginationResult } from './firestore';
 import type { User } from '../types';
 

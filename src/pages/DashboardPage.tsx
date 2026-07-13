@@ -1,16 +1,19 @@
 import { useState, useEffect, useCallback } from 'react';
-import { DashboardStats, Employee, EmployeeTransfer, AuditLog } from '../types';
+import { DashboardStats, Employee, EmployeeTransfer, AuditLog, ROLE_LABELS } from '../types';
 import StatCard from '../components/common/StatCard';
 import {
   Building2, Building, Users, UserCheck, Shield, TrendingUp, Activity,
-  Clock, ArrowUpRight, ArrowRightLeft, Settings, BarChart3,
+  Clock, ArrowUpRight, ArrowRightLeft, BarChart3,
   UserPlus, CheckCircle, Calendar, Sparkles, Server, Lock, Fingerprint,
-  RefreshCw, ChevronRight,
+  RefreshCw, Stethoscope, Heart, Target, Award, BookOpen, FileText, GraduationCap,
+  UserCog, UserX, FlaskConical, LogIn, AlertTriangle, XCircle,
+  Database, HardDrive, ShieldAlert, Pill, ClipboardCheck, Syringe, Wrench, Microscope,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getDashboardStats, getEmployeesPerHospital, getEmployeesPerDepartment, getRecentActivities, getRecentEmployees, getRecentTransfers } from '../lib/dashboard';
+import { getDocsAll, countDocs, type FilterConstraint } from '../lib/firestore';
 
 const COLORS = ['#C06C4C', '#6B7E36', '#D4A056', '#8B5E3C', '#5C8A5E', '#C4956A', '#7A8B5B', '#B8865A', '#4A6741', '#CD7F4E'];
 const SECTION_COLORS = {
@@ -53,7 +56,7 @@ function Skeleton() {
 }
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [empPerHospital, setEmpPerHospital] = useState<{ name: string; value: number }[]>([]);
   const [empPerDept, setEmpPerDept] = useState<{ name: string; value: number }[]>([]);
@@ -64,6 +67,44 @@ export default function DashboardPage() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Phase 2 executive data
+  const [hospitalRankings, setHospitalRankings] = useState<any[]>([]);
+  const [kpiSummary, setKpiSummary] = useState({ total: 0, achieved: 0, rate: 0 });
+  const [clinicalAuditCount, setClinicalAuditCount] = useState(0);
+  const [nursingAuditCount, setNursingAuditCount] = useState(0);
+  const [researchCount, setResearchCount] = useState(0);
+
+  // Super Admin data
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [activeUsers, setActiveUsers] = useState(0);
+  const [inactiveUsers, setInactiveUsers] = useState(0);
+  const [usersByRole, setUsersByRole] = useState<{ role: string; count: number; label: string }[]>([]);
+  const [doctorCount, setDoctorCount] = useState(0);
+  const [nurseCount, setNurseCount] = useState(0);
+  const [pharmacistCount, setPharmacistCount] = useState(0);
+  const [labCount, setLabCount] = useState(0);
+  const [adminCount, setAdminCount] = useState(0);
+  const [activeHospitals, setActiveHospitals] = useState(0);
+  const [inactiveHospitals, setInactiveHospitals] = useState(0);
+  const [clinicalGuidelineCount, setClinicalGuidelineCount] = useState(0);
+  const [specialistCount, setSpecialistCount] = useState(0);
+  const [trainingProgramCount, setTrainingProgramCount] = useState(0);
+  const [generatedReportCount, setGeneratedReportCount] = useState(0);
+
+  // Phase 3 counts
+  const [medicineCount, setMedicineCount] = useState(0);
+  const [essentialMedicineCount, setEssentialMedicineCount] = useState(0);
+  const [pharmaAuditCount, setPharmaAuditCount] = useState(0);
+  const [pharmaWorkforceCount, setPharmaWorkforceCount] = useState(0);
+  const [pharmaVigilanceCount, setPharmaVigilanceCount] = useState(0);
+  const [pharmaQualityCount, setPharmaQualityCount] = useState(0);
+  const [laboratoryCount, setLaboratoryCount] = useState(0);
+  const [labAuditCount, setLabAuditCount] = useState(0);
+  const [labWorkforceCount, setLabWorkforceCount] = useState(0);
+  const [equipmentCount, setEquipmentCount] = useState(0);
+  const [reagentCount, setReagentCount] = useState(0);
+  const [surveillanceCount, setSurveillanceCount] = useState(0);
 
   const loadDashboardData = useCallback(async (silent = false) => {
     if (!silent) setIsRefreshing(true);
@@ -76,20 +117,126 @@ export default function DashboardPage() {
         getRecentEmployees(hospitalScope),
         getRecentTransfers(hospitalScope),
         getRecentActivities(hospitalScope),
+        getDocsAll('hospitals', [{ field: 'status', op: '==', value: 'active' }], { field: 'hospital_name', dir: 'asc' }),
+        getDocsAll('kpis', [{ field: 'status', op: '==', value: 'active' }]),
+        getDocsAll('clinicalAudits', [{ field: 'status', op: '==', value: 'active' }]),
+        getDocsAll('nursingAudits', [{ field: 'status', op: '==', value: 'active' }]),
+        getDocsAll('researchProjects', [{ field: 'status', op: '==', value: 'active' }]),
+        getDocsAll('hospitalScorecards'),
       ]);
-      const [s, eph, epd, re, rt, ra] = results.map(r => r.status === 'fulfilled' ? r.value : undefined);
+      const [s, eph, epd, re, rt, ra, hospitals, kpis, clinicalAudits, nursingAudits, research, scorecards] = results.map(r => r.status === 'fulfilled' ? r.value : undefined);
       if (s) setStats(s as DashboardStats);
       if (eph) setEmpPerHospital((eph as any[]).map(h => ({ name: h.hospital_name, value: parseInt(h.employee_count) })));
       if (epd) setEmpPerDept((epd as any[]).map(d => ({ name: d.department_name, value: parseInt(d.employee_count) })));
       if (re) setRecentEmployees(Array.isArray(re) ? re : []);
       if (rt) setRecentTransfers(Array.isArray(rt) ? rt : []);
       if (ra) setRecentActivities(Array.isArray(ra) ? ra : []);
+
+      if (hospitals && Array.isArray(hospitals)) {
+        const ranked = await Promise.all(
+          hospitals.map(async (h: any) => {
+            const empCount = await countDocs('employees', [{ field: 'hospital_id', op: '==', value: h.id } as FilterConstraint]);
+            return { id: h.id, name: h.hospital_name, code: h.hospital_code, employee_count: empCount };
+          })
+        );
+        setHospitalRankings(ranked.sort((a: any, b: any) => b.employee_count - a.employee_count));
+      }
+
+      if (kpis && Array.isArray(kpis)) {
+        const total = kpis.length;
+        const achieved = kpis.filter((k: any) => k.actual_value >= k.target).length;
+        setKpiSummary({ total, achieved, rate: total > 0 ? Math.round((achieved / total) * 100) : 0 });
+      }
+      if (clinicalAudits && Array.isArray(clinicalAudits)) setClinicalAuditCount(clinicalAudits.length);
+      if (nursingAudits && Array.isArray(nursingAudits)) setNursingAuditCount(nursingAudits.length);
+      if (research && Array.isArray(research)) setResearchCount(research.length);
+
+      // Shared data for super_admin & executive_secretary
+      if (hasRole('super_admin', 'executive_secretary')) {
+        const [doc, nur, pharm, lab, admin] = await Promise.all([
+          countDocs('employees', [{ field: 'position', op: '==', value: 'Doctor' }]),
+          countDocs('employees', [{ field: 'position', op: '==', value: 'Nurse' }]),
+          countDocs('employees', [{ field: 'position', op: '==', value: 'Pharmacist' }]),
+          countDocs('employees', [{ field: 'position', op: '==', value: 'Laboratory Personnel' }]),
+          countDocs('employees', [{ field: 'position', op: '==', value: 'Administrative Staff' }]),
+        ]);
+        setDoctorCount(doc);
+        setNurseCount(nur);
+        setPharmacistCount(pharm);
+        setLabCount(lab);
+        setAdminCount(admin);
+
+        const [actHosp, inactHosp, guidelines, specialists, trainings, reports] = await Promise.all([
+          countDocs('hospitals', [{ field: 'status', op: '==', value: 'active' }]),
+          countDocs('hospitals', [{ field: 'status', op: '==', value: 'inactive' }]),
+          getDocsAll('clinicalGuidelines'),
+          getDocsAll('specialists'),
+          getDocsAll('trainingPrograms'),
+          getDocsAll('generatedReports'),
+        ]);
+        setActiveHospitals(actHosp);
+        setInactiveHospitals(inactHosp);
+        setClinicalGuidelineCount(guidelines.length);
+        setSpecialistCount(specialists.length);
+        setTrainingProgramCount(trainings.length);
+        setGeneratedReportCount(reports.length);
+      }
+
+      // Phase 3 shared data for super_admin & executive_secretary
+      if (hasRole('super_admin', 'executive_secretary')) {
+        const [med, essMed, phAud, phWf, phVig, phQa, labs, labAud, labWf, equip, reag, surv] = await Promise.all([
+          getDocsAll('medicines'),
+          getDocsAll('essentialMedicines'),
+          getDocsAll('pharmaceuticalAudits'),
+          getDocsAll('pharmaceuticalWorkforce'),
+          getDocsAll('pharmacovigilanceReports'),
+          getDocsAll('pharmaceuticalQualityReports'),
+          getDocsAll('laboratories'),
+          getDocsAll('laboratoryAudits'),
+          getDocsAll('laboratoryWorkforce'),
+          getDocsAll('laboratoryEquipment'),
+          getDocsAll('laboratoryReagents'),
+          getDocsAll('diseaseSurveillanceReports'),
+        ]);
+        setMedicineCount(med.length);
+        setEssentialMedicineCount(essMed.length);
+        setPharmaAuditCount(phAud.length);
+        setPharmaWorkforceCount(phWf.length);
+        setPharmaVigilanceCount(phVig.length);
+        setPharmaQualityCount(phQa.length);
+        setLaboratoryCount(labs.length);
+        setLabAuditCount(labAud.length);
+        setLabWorkforceCount(labWf.length);
+        setEquipmentCount(equip.length);
+        setReagentCount(reag.length);
+        setSurveillanceCount(surv.length);
+      }
+
+      // Super admin only data
+      if (hasRole('super_admin')) {
+        const allUsers = await getDocsAll('users');
+        setTotalUsers(allUsers.length);
+        setActiveUsers(allUsers.filter((u: any) => u.status === 'active').length);
+        setInactiveUsers(allUsers.filter((u: any) => u.status === 'inactive').length);
+
+        const roleCounts: Record<string, number> = {};
+        allUsers.forEach((u: any) => {
+          roleCounts[u.role] = (roleCounts[u.role] || 0) + 1;
+        });
+        setUsersByRole(
+          Object.entries(roleCounts)
+            .map(([role, count]) => ({ role, count: count as number, label: (ROLE_LABELS as any)[role] || role }))
+            .sort((a, b) => b.count - a.count)
+        );
+
+      }
+
       setLastUpdated(new Date());
     } finally {
       setLoading(false);
       setIsRefreshing(false);
     }
-  }, [user]);
+  }, [user, hasRole]);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -120,6 +267,18 @@ export default function DashboardPage() {
     { label: 'Departments', icon: Building, href: '/departments', desc: 'Organize units', color: 'from-army-700 to-army-600', bg: 'bg-army-50', iconC: 'text-army-700' },
     { label: 'Transfers', icon: ArrowRightLeft, href: '/transfers', desc: 'Staff movements', color: 'from-amber-500 to-orange-600', bg: 'bg-amber-50', iconC: 'text-amber-600' },
     { label: 'Reports', icon: TrendingUp, href: '/reports', desc: 'Data & insights', color: 'from-teal-500 to-emerald-600', bg: 'bg-teal-50', iconC: 'text-teal-600' },
+    ...(hasRole('director_medical_services') ? [
+      { label: 'Clinical', icon: Stethoscope, href: '/medical-dashboard', desc: 'Clinical oversight', color: 'from-emerald-600 to-emerald-700', bg: 'bg-emerald-50', iconC: 'text-emerald-600' },
+      { label: 'Guidelines', icon: FileText, href: '/clinical-guidelines', desc: 'Clinical standards', color: 'from-teal-500 to-teal-600', bg: 'bg-teal-50', iconC: 'text-teal-600' },
+    ] : []),
+    ...(hasRole('director_nursing_services') ? [
+      { label: 'Nursing', icon: Heart, href: '/nursing-dashboard', desc: 'Nursing oversight', color: 'from-rose-500 to-rose-600', bg: 'bg-rose-50', iconC: 'text-rose-600' },
+      { label: 'Training', icon: GraduationCap, href: '/nursing-training', desc: 'CPD programs', color: 'from-violet-500 to-violet-600', bg: 'bg-violet-50', iconC: 'text-violet-600' },
+    ] : []),
+    ...(hasRole('director_prs') ? [
+      { label: 'KPIs', icon: Target, href: '/kpis', desc: 'Performance tracking', color: 'from-blue-500 to-indigo-600', bg: 'bg-blue-50', iconC: 'text-blue-600' },
+      { label: 'Scorecards', icon: Award, href: '/scorecards', desc: 'Hospital scores', color: 'from-amber-500 to-orange-600', bg: 'bg-amber-50', iconC: 'text-amber-600' },
+    ] : []),
     { label: 'Audit Logs', icon: Activity, href: '/audit-logs', desc: 'Track changes', color: 'from-purple-500 to-violet-600', bg: 'bg-purple-50', iconC: 'text-purple-600' },
   ];
 
@@ -148,17 +307,9 @@ export default function DashboardPage() {
         <div className="relative z-10">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div className="space-y-3">
-              <div className="flex items-center gap-3 flex-wrap">
-                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/10 border border-amber-400/20">
-                  <Sparkles size={12} className="text-amber-400" />
-                  <span className="text-amber-300 text-[11px] font-semibold tracking-wider uppercase">Digital HMIS Platform</span>
-                </div>
-                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-400/10 border border-emerald-400/20">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping-soft relative">
-                    <span className="absolute inset-0 rounded-full bg-emerald-400" />
-                  </span>
-                  <span className="text-emerald-300 text-[11px] font-medium">All Systems Operational</span>
-                </div>
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-400/10 border border-emerald-400/20 w-fit">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                <span className="text-emerald-300 text-[11px] font-medium">All Systems Operational</span>
               </div>
               <div>
                 <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
@@ -190,19 +341,8 @@ export default function DashboardPage() {
               </Link>
             </div>
           </div>
-          {/* Value pillars */}
-          <div className="mt-5 flex items-center gap-4 flex-wrap">
-            {[
-              { label: 'Leadership', icon: Shield, color: 'text-amber-300', border: 'border-amber-400/20' },
-              { label: 'Health', icon: Activity, color: 'text-emerald-300', border: 'border-emerald-400/20' },
-              { label: 'Management', icon: BarChart3, color: 'text-sky-300', border: 'border-sky-400/20' },
-              { label: 'Trust & Technology', icon: Lock, color: 'text-indigo-300', border: 'border-indigo-400/20' },
-            ].map(v => (
-              <div key={v.label} className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border ${v.border}`}>
-                <v.icon size={12} className={v.color} />
-                <span className={`text-[11px] font-semibold tracking-wide ${v.color}`}>{v.label}</span>
-              </div>
-            ))}
+          <div className="mt-4 text-xs text-emerald-300/60">
+            Gombe State Hospital Services Management Board &mdash; HMIS v2.0
           </div>
         </div>
         <div className="absolute bottom-0 left-0 right-0 h-0.5 flex mt-6">
@@ -213,11 +353,18 @@ export default function DashboardPage() {
       </div>
 
       {/* ===== STATS CARDS ===== */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total Hospitals" value={stats?.total_hospitals || 0} icon={Building2} color="primary" subtitle="Registered facilities" trend="up" trendValue="+12%" />
-        <StatCard title="Total Departments" value={stats?.total_departments || 0} icon={Building} color="army" subtitle="Active units" trend="up" trendValue="+8%" />
-        <StatCard title="Total Employees" value={totalEmployees} icon={Users} color="blue" subtitle="All staff records" trend={totalEmployees > 0 ? 'up' : 'neutral'} trendValue={totalEmployees > 0 ? '+5%' : '0%'} />
-        <StatCard title="Active Employees" value={activeEmployees} icon={UserCheck} color="teal" subtitle={`${activePercent}% of total workforce`} trend={activePercent >= 80 ? 'up' : activePercent >= 50 ? 'neutral' : 'down'} trendValue={`${activePercent}% active`} />
+      <div className={`grid grid-cols-1 sm:grid-cols-2 ${hasRole('super_admin') ? 'lg:grid-cols-7' : 'lg:grid-cols-4'} gap-4`}>
+        <StatCard title="Total Hospitals" value={stats?.total_hospitals || 0} icon={Building2} color="primary" subtitle="Registered facilities" />
+        <StatCard title="Total Departments" value={stats?.total_departments || 0} icon={Building} color="army" subtitle="Active units" />
+        <StatCard title="Total Employees" value={totalEmployees} icon={Users} color="blue" subtitle="All staff records" />
+        <StatCard title="Active Employees" value={activeEmployees} icon={UserCheck} color="teal" subtitle={`${activePercent}% of total workforce`} />
+        {hasRole('super_admin') && (
+          <>
+            <StatCard title="Total Users" value={totalUsers} icon={UserCog} color="purple" subtitle="System accounts" />
+            <StatCard title="Active Users" value={activeUsers} icon={UserCheck} color="sage" subtitle={`${totalUsers > 0 ? Math.round((activeUsers / totalUsers) * 100) : 0}% active`} />
+            <StatCard title="Inactive Users" value={inactiveUsers} icon={UserX} color="orange" subtitle="Disabled accounts" />
+          </>
+        )}
       </div>
 
       {/* ===== SYSTEM HEALTH & TRUST ===== */}
@@ -260,6 +407,114 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* ===== SUPER ADMIN SECTIONS ===== */}
+      {hasRole('super_admin') && (
+        <>
+          {/* User Statistics + Hospital/Department Summary */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Users by Role */}
+            <div className="card border-t-2 border-t-purple-400">
+              <div className="card-header">
+                <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                  <Shield size={16} className="text-purple-600" />
+                  Users by Role
+                </h3>
+              </div>
+              <div className="p-4">
+                {usersByRole.length === 0 ? (
+                  <p className="text-sm text-slate-400 text-center py-4">No users yet.</p>
+                ) : (
+                  <div className="space-y-2.5">
+                    {usersByRole.map((r) => (
+                      <div key={r.role} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 transition-colors">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-slate-700">{r.label}</span>
+                            <span className="text-sm font-bold text-slate-900">{r.count}</span>
+                          </div>
+                          <div className="w-full h-1.5 bg-slate-100 rounded-full mt-1 overflow-hidden">
+                            <div className="h-full rounded-full bg-purple-500 transition-all duration-500"
+                              style={{ width: `${Math.min((r.count / Math.max(...usersByRole.map(x => x.count))) * 100, 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Hospital + Department Summary */}
+            <div className="space-y-6">
+              {/* Hospital Overview */}
+              <div className="card border-t-2 border-t-emerald-400">
+                <div className="card-header">
+                  <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                    <Building2 size={16} className="text-emerald-600" />
+                    Hospital Overview
+                  </h3>
+                </div>
+                <div className="p-4 space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-xl">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle size={16} className="text-emerald-600" />
+                      <span className="text-sm font-medium text-emerald-800">Active</span>
+                    </div>
+                    <span className="text-lg font-bold text-emerald-700">{activeHospitals}</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-red-50 rounded-xl">
+                    <div className="flex items-center gap-2">
+                      <XCircle size={16} className="text-red-500" />
+                      <span className="text-sm font-medium text-red-700">Inactive</span>
+                    </div>
+                    <span className="text-lg font-bold text-red-600">{inactiveHospitals}</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                    <div className="flex items-center gap-2">
+                      <Building2 size={16} className="text-slate-500" />
+                      <span className="text-sm font-medium text-slate-700">Total Registered</span>
+                    </div>
+                    <span className="text-lg font-bold text-slate-700">{activeHospitals + inactiveHospitals}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Department Summary */}
+              <div className="card border-t-2 border-t-army-400">
+                <div className="card-header">
+                  <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                    <Building size={16} className="text-army-600" />
+                    Department Summary
+                  </h3>
+                </div>
+                <div className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Building size={20} className="text-army-600" />
+                    <span className="text-sm font-medium text-slate-700">Departments Registered</span>
+                  </div>
+                  <span className="text-2xl font-bold text-army-700">{stats?.total_departments || 0}</span>
+                </div>
+                {deptWithData.length > 0 && (
+                  <div className="px-4 pb-4">
+                    <p className="text-xs text-slate-500 mb-2">Employees per Department</p>
+                    <div className="space-y-1.5">
+                      {deptWithData.slice(0, 5).map((d, i) => (
+                        <div key={d.name} className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+                          <span className="text-xs text-slate-600 flex-1 truncate">{d.name}</span>
+                          <span className="text-xs font-semibold text-slate-800">{d.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* ===== CHARTS + QUICK ACTIONS ===== */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -332,7 +587,8 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ===== BOTTOM SECTION ===== */}
+      {/* ===== BOTTOM SECTION (hidden for super_admin) ===== */}
+      {!hasRole('super_admin') && (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Department Distribution */}
         <div className="lg:col-span-2">
@@ -459,8 +715,276 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+      )}
 
-      {/* ===== RECENT ACTIVITIES ===== */}
+      {/* ===== PHASE 2 COUNTS (Super Admin - simple counts only) ===== */}
+      {hasRole('super_admin') && (
+        <>
+          <div className="flex items-center gap-2 pt-2">
+            <div className="h-px flex-1 bg-gradient-to-r from-slate-200 via-slate-400 to-slate-200" />
+            <span className="text-xs uppercase tracking-[0.15em] text-slate-600 font-semibold px-3">System Overview</span>
+            <div className="h-px flex-1 bg-gradient-to-r from-slate-200 via-slate-400 to-slate-200" />
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+            <StatCard title="Guidelines" value={clinicalGuidelineCount} icon={FileText} color="primary" subtitle="Total" />
+            <StatCard title="Clinical Audits" value={clinicalAuditCount} icon={Stethoscope} color="blue" subtitle="Active" />
+            <StatCard title="Specialists" value={specialistCount} icon={UserCog} color="purple" subtitle="Total" />
+            <StatCard title="Nursing Audits" value={nursingAuditCount} icon={Heart} color="purple" subtitle="Active" />
+            <StatCard title="Training" value={trainingProgramCount} icon={GraduationCap} color="teal" subtitle="Total" />
+            <StatCard title="KPIs" value={kpiSummary.total} icon={Target} color="lemon" subtitle="Active" />
+            <StatCard title="Research" value={researchCount} icon={BookOpen} color="army" subtitle="Active" />
+            <StatCard title="Reports" value={generatedReportCount} icon={FileText} color="orange" subtitle="Total" />
+          </div>
+          <div className="flex items-center gap-2 pt-2">
+            <div className="h-px flex-1 bg-gradient-to-r from-green-200 via-green-400 to-green-200" />
+            <span className="text-xs uppercase tracking-[0.15em] text-green-700 font-semibold px-3">Pharmaceutical & Laboratory</span>
+            <div className="h-px flex-1 bg-gradient-to-r from-green-200 via-green-400 to-green-200" />
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+            <StatCard title="Medicines" value={medicineCount} icon={Pill} color="primary" subtitle="Total" />
+            <StatCard title="Pharm. Audits" value={pharmaAuditCount} icon={ClipboardCheck} color="blue" subtitle="Total" />
+            <StatCard title="Pharmacovigilance" value={pharmaVigilanceCount} icon={AlertTriangle} color="orange" subtitle="Reports" />
+            <StatCard title="Laboratories" value={laboratoryCount} icon={Microscope} color="purple" subtitle="Total" />
+            <StatCard title="Lab. Audits" value={labAuditCount} icon={ClipboardCheck} color="teal" subtitle="Total" />
+            <StatCard title="Equipment" value={equipmentCount} icon={Wrench} color="lemon" subtitle="Records" />
+            <StatCard title="Surveillance" value={surveillanceCount} icon={Activity} color="orange" subtitle="Reports" />
+          </div>
+        </>
+      )}
+
+      {/* ===== EXECUTIVE OVERVIEW (Executive Secretary only) ===== */}
+      {hasRole('executive_secretary') && (
+        <>
+          <div className="flex items-center gap-2 pt-2">
+            <div className="h-px flex-1 bg-gradient-to-r from-emerald-200 via-emerald-400 to-emerald-200" />
+            <span className="text-xs uppercase tracking-[0.15em] text-emerald-700 font-semibold px-3">Executive Overview</span>
+            <div className="h-px flex-1 bg-gradient-to-r from-emerald-200 via-emerald-400 to-emerald-200" />
+          </div>
+
+          {/* Phase 2 Stats */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard title="Clinical Guidelines" value={clinicalGuidelineCount} icon={FileText} color="primary" subtitle="Published guidelines" />
+            <StatCard title="Clinical Audits" value={clinicalAuditCount} icon={Stethoscope} color="blue" subtitle="Active clinical audits" />
+            <StatCard title="Specialists" value={specialistCount} icon={UserCog} color="purple" subtitle="Registered specialists" />
+            <StatCard title="Nursing Audits" value={nursingAuditCount} icon={Heart} color="purple" subtitle="Active nursing audits" />
+            <StatCard title="Training Programs" value={trainingProgramCount} icon={GraduationCap} color="teal" subtitle="CPD & training" />
+            <StatCard title="KPIs" value={kpiSummary.total} icon={Target} color="lemon" subtitle={`${kpiSummary.rate}% achieved`} />
+            <StatCard title="Research Projects" value={researchCount} icon={BookOpen} color="army" subtitle="Active research" />
+            <StatCard title="Generated Reports" value={generatedReportCount} icon={FileText} color="orange" subtitle="System reports" />
+          </div>
+
+          {/* Hospital Rankings + KPI Overview */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="card border-t-2 border-t-amber-400">
+              <div className="card-header">
+                <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                  <Building2 size={16} className="text-amber-600" />
+                  Hospital Rankings (by Workforce)
+                </h3>
+              </div>
+              <div className="p-4">
+                {hospitalRankings.length === 0 ? (
+                  <p className="text-sm text-slate-400 text-center py-4">No data available.</p>
+                ) : (
+                  <div className="space-y-2.5">
+                    {hospitalRankings.map((h: any, i: number) => (
+                      <div key={h.id} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-50 transition-colors">
+                        <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold text-white ${
+                          i === 0 ? 'bg-amber-500' : i === 1 ? 'bg-slate-400' : i === 2 ? 'bg-amber-700' : 'bg-slate-200 text-slate-500'
+                        }`}>
+                          {i + 1}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-slate-800 truncate">{h.name}</p>
+                          <p className="text-xs text-slate-400">{h.code}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-semibold text-slate-700">{h.employee_count}</p>
+                          <p className="text-[10px] text-slate-400">staff</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="card border-t-2 border-t-emerald-400">
+              <div className="card-header">
+                <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                  <Target size={16} className="text-emerald-600" />
+                  KPI Performance Overview
+                </h3>
+              </div>
+              <div className="p-4">
+                {kpiSummary.total === 0 ? (
+                  <p className="text-sm text-slate-400 text-center py-4">No KPIs configured yet.</p>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-center p-6">
+                      <div className="relative w-40 h-40">
+                        <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
+                          <circle cx="60" cy="60" r="54" fill="none" stroke="#e2e8f0" strokeWidth="8" />
+                          <circle cx="60" cy="60" r="54" fill="none" stroke="#008751" strokeWidth="8"
+                            strokeDasharray={`${2 * Math.PI * 54}`}
+                            strokeDashoffset={`${2 * Math.PI * 54 * (1 - kpiSummary.rate / 100)}`}
+                            strokeLinecap="round"
+                            className="transition-all duration-1000"
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="text-center">
+                            <p className="text-3xl font-bold text-slate-900">{kpiSummary.rate}%</p>
+                            <p className="text-xs text-slate-400">Achievement</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-center">
+                      <div className="p-3 bg-emerald-50 rounded-xl">
+                        <p className="text-2xl font-bold text-emerald-700">{kpiSummary.achieved}</p>
+                        <p className="text-xs text-emerald-600">Achieved</p>
+                      </div>
+                      <div className="p-3 bg-slate-50 rounded-xl">
+                        <p className="text-2xl font-bold text-slate-700">{kpiSummary.total}</p>
+                        <p className="text-xs text-slate-500">Total KPIs</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Workforce Overview */}
+          <div className="flex items-center gap-2 pt-2">
+            <div className="h-px flex-1 bg-gradient-to-r from-blue-200 via-blue-400 to-blue-200" />
+            <span className="text-xs uppercase tracking-[0.15em] text-blue-700 font-semibold px-3">Workforce Overview</span>
+            <div className="h-px flex-1 bg-gradient-to-r from-blue-200 via-blue-400 to-blue-200" />
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            <StatCard title="Doctors" value={doctorCount} icon={UserCheck} color="primary" subtitle="Registered" />
+            <StatCard title="Nurses" value={nurseCount} icon={UserPlus} color="blue" subtitle="Registered" />
+            <StatCard title="Pharmacists" value={pharmacistCount} icon={Pill} color="purple" subtitle="Registered" />
+            <StatCard title="Lab Personnel" value={labCount} icon={FlaskConical} color="teal" subtitle="Registered" />
+            <StatCard title="Admin Staff" value={adminCount} icon={Users} color="army" subtitle="Registered" />
+            <StatCard title="Total Hospitals" value={activeHospitals} icon={Building2} color="lemon" subtitle="Active" />
+          </div>
+
+          {/* Services Overview - Read-only summaries */}
+          <div className="flex items-center gap-2 pt-2">
+            <div className="h-px flex-1 bg-gradient-to-r from-slate-200 via-slate-400 to-slate-200" />
+            <span className="text-xs uppercase tracking-[0.15em] text-slate-600 font-semibold px-3">Services Overview</span>
+            <div className="h-px flex-1 bg-gradient-to-r from-slate-200 via-slate-400 to-slate-200" />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="card border-t-2 border-t-blue-400">
+              <div className="card-header">
+                <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                  <Stethoscope size={16} className="text-blue-600" />
+                  Clinical Services
+                </h3>
+                <span className="text-[10px] text-slate-400">Read-only</span>
+              </div>
+              <div className="p-4 space-y-3">
+                <div className="flex justify-between items-center p-2.5 bg-blue-50 rounded-lg">
+                  <span className="text-sm text-slate-700">Clinical Guidelines</span>
+                  <span className="text-sm font-bold text-blue-700">{clinicalGuidelineCount}</span>
+                </div>
+                <div className="flex justify-between items-center p-2.5 bg-blue-50 rounded-lg">
+                  <span className="text-sm text-slate-700">Active Clinical Audits</span>
+                  <span className="text-sm font-bold text-blue-700">{clinicalAuditCount}</span>
+                </div>
+                <div className="flex justify-between items-center p-2.5 bg-blue-50 rounded-lg">
+                  <span className="text-sm text-slate-700">Registered Specialists</span>
+                  <span className="text-sm font-bold text-blue-700">{specialistCount}</span>
+                </div>
+              </div>
+            </div>
+            <div className="card border-t-2 border-t-purple-400">
+              <div className="card-header">
+                <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                  <Heart size={16} className="text-purple-600" />
+                  Nursing Services
+                </h3>
+                <span className="text-[10px] text-slate-400">Read-only</span>
+              </div>
+              <div className="p-4 space-y-3">
+                <div className="flex justify-between items-center p-2.5 bg-purple-50 rounded-lg">
+                  <span className="text-sm text-slate-700">Nursing Workforce</span>
+                  <span className="text-sm font-bold text-purple-700">{nurseCount}</span>
+                </div>
+                <div className="flex justify-between items-center p-2.5 bg-purple-50 rounded-lg">
+                  <span className="text-sm text-slate-700">Active Nursing Audits</span>
+                  <span className="text-sm font-bold text-purple-700">{nursingAuditCount}</span>
+                </div>
+                <div className="flex justify-between items-center p-2.5 bg-purple-50 rounded-lg">
+                  <span className="text-sm text-slate-700">Training Programs</span>
+                  <span className="text-sm font-bold text-purple-700">{trainingProgramCount}</span>
+                </div>
+              </div>
+            </div>
+            <div className="card border-t-2 border-t-lemon-400">
+              <div className="card-header">
+                <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                  <BarChart3 size={16} className="text-amber-600" />
+                  PRS Overview
+                </h3>
+                <span className="text-[10px] text-slate-400">Read-only</span>
+              </div>
+              <div className="p-4 space-y-3">
+                <div className="flex justify-between items-center p-2.5 bg-amber-50 rounded-lg">
+                  <span className="text-sm text-slate-700">Active KPIs</span>
+                  <span className="text-sm font-bold text-amber-700">{kpiSummary.total}</span>
+                </div>
+                <div className="flex justify-between items-center p-2.5 bg-amber-50 rounded-lg">
+                  <span className="text-sm text-slate-700">Active Research</span>
+                  <span className="text-sm font-bold text-amber-700">{researchCount}</span>
+                </div>
+                <div className="flex justify-between items-center p-2.5 bg-amber-50 rounded-lg">
+                  <span className="text-sm text-slate-700">Generated Reports</span>
+                  <span className="text-sm font-bold text-amber-700">{generatedReportCount}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Phase 3: Pharmaceutical Overview */}
+          <div className="flex items-center gap-2 pt-2">
+            <div className="h-px flex-1 bg-gradient-to-r from-green-200 via-green-400 to-green-200" />
+            <span className="text-xs uppercase tracking-[0.15em] text-green-700 font-semibold px-3">Pharmaceutical Overview</span>
+            <div className="h-px flex-1 bg-gradient-to-r from-green-200 via-green-400 to-green-200" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard title="Total Medicines" value={medicineCount} icon={Pill} color="primary" subtitle="All medicines" />
+            <StatCard title="Essential Medicines" value={essentialMedicineCount} icon={FileText} color="blue" subtitle="Essential list" />
+            <StatCard title="Pharm. Workforce" value={pharmaWorkforceCount} icon={Users} color="purple" subtitle="Workforce records" />
+            <StatCard title="Pharm. Audits" value={pharmaAuditCount} icon={ClipboardCheck} color="lemon" subtitle="Total audits" />
+            <StatCard title="Pharmacovigilance" value={pharmaVigilanceCount} icon={AlertTriangle} color="orange" subtitle="ADR reports" />
+            <StatCard title="Quality Reports" value={pharmaQualityCount} icon={Shield} color="teal" subtitle="QA reports" />
+          </div>
+
+          {/* Phase 3: Laboratory Overview */}
+          <div className="flex items-center gap-2 pt-2">
+            <div className="h-px flex-1 bg-gradient-to-r from-teal-200 via-teal-400 to-teal-200" />
+            <span className="text-xs uppercase tracking-[0.15em] text-teal-700 font-semibold px-3">Laboratory Overview</span>
+            <div className="h-px flex-1 bg-gradient-to-r from-teal-200 via-teal-400 to-teal-200" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard title="Laboratories" value={laboratoryCount} icon={Microscope} color="primary" subtitle="Registered labs" />
+            <StatCard title="Lab. Workforce" value={labWorkforceCount} icon={Users} color="blue" subtitle="Workforce records" />
+            <StatCard title="Equipment" value={equipmentCount} icon={Wrench} color="purple" subtitle="Lab equipment" />
+            <StatCard title="Lab. Audits" value={labAuditCount} icon={ClipboardCheck} color="lemon" subtitle="Total audits" />
+            <StatCard title="Reagents" value={reagentCount} icon={Syringe} color="teal" subtitle="Reagent records" />
+            <StatCard title="Surveillance" value={surveillanceCount} icon={Activity} color="orange" subtitle="Disease reports" />
+          </div>
+        </>
+      )}
+
+      {/* Super Admin dashboard ends here - health status shown in top bar */}
+
+      {/* ===== RECENT ACTIVITIES (hidden for super_admin) ===== */}
+      {!hasRole('super_admin') && (
       <div className={`card border-t-2 ${SECTION_COLORS.activities.border}`}>
         <div className="card-header">
           <h3 className="section-title flex items-center gap-2">
@@ -512,6 +1036,7 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+      )}
 
       {/* ===== TRUST & TECHNOLOGY FOOTER ===== */}
       <div className="flex items-center justify-between flex-wrap gap-3 px-5 py-3.5 rounded-2xl bg-white border border-slate-200/60">

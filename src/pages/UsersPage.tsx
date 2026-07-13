@@ -199,6 +199,11 @@ export default function UsersPage() {
                 <option value="executive_secretary">Executive Secretary</option>
                 <option value="hospital_admin">Hospital Admin</option>
                 <option value="hr_officer">HR Officer</option>
+                <option value="director_medical_services">Director Medical Services</option>
+                <option value="director_nursing_services">Director Nursing Services</option>
+                <option value="director_prs">Director PRS</option>
+                <option value="director_pharmaceutical_services">Director Pharmaceutical Services</option>
+                <option value="director_laboratory_services">Director Medical Laboratory Services</option>
               </select>
               <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             </div>

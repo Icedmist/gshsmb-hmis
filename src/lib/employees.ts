@@ -1,6 +1,6 @@
 import { collection, query, where, getDocs, limit as firestoreLimit } from 'firebase/firestore';
 import { db } from './firebase';
-import { getDocById, getDocsPaginated, addDocument, updateDocument, countDocs, type FilterConstraint, type PaginationResult } from './firestore';
+import { getDocById, getDocsPaginated, addDocument, updateDocument, deleteDocument, countDocs, type FilterConstraint, type PaginationResult } from './firestore';
 import { Timestamp } from 'firebase/firestore';
 import type { Employee } from '../types';
 
@@ -93,6 +93,10 @@ export const updateEmployee = async (id: string, data: Partial<Employee>): Promi
     }
   }
   await updateDocument('employees', id, data);
+};
+
+export const deleteEmployee = async (id: string): Promise<void> => {
+  await deleteDocument('employees', id);
 };
 
 export const transferEmployee = async (

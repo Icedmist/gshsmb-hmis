@@ -32,7 +32,7 @@ export const createUser = functions.https.onCall(async (request: functions.https
     throw new functions.https.HttpsError('invalid-argument', 'Email, password, full name, and role are required.');
   }
 
-  const validRoles = ['super_admin', 'executive_secretary', 'hospital_admin', 'hr_officer'];
+  const validRoles = ['super_admin', 'executive_secretary', 'hospital_admin', 'hr_officer', 'director_medical_services', 'director_nursing_services', 'director_prs', 'director_pharmaceutical_services', 'director_laboratory_services'];
   if (!validRoles.includes(data.role)) {
     throw new functions.https.HttpsError('invalid-argument', 'Invalid role.');
   }

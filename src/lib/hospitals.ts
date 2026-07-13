@@ -1,4 +1,4 @@
-import { collection, query, where, getDocs, limit as firestoreLimit, Timestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit as firestoreLimit } from 'firebase/firestore';
 import { db } from './firebase';
 import { getDocById, getDocsPaginated, addDocument, updateDocument, deleteDocument, countDocs, getDocsAll, type FilterConstraint, type PaginationResult } from './firestore';
 import type { Hospital } from '../types';

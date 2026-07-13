@@ -3,10 +3,10 @@ import { Employee, Pagination as PaginationType } from '../types';
 import Modal from '../components/common/Modal';
 import Pagination from '../components/common/Pagination';
 import { useAuth } from '../contexts/AuthContext';
-import { Plus, Search, Pencil, ArrowRightLeft, Users, X, ChevronDown, UserCheck, UserX, User } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, ArrowRightLeft, Users, X, ChevronDown, UserCheck, UserX, User } from 'lucide-react';
 import { POSITION_CATEGORIES } from '../types';
 import StatCard from '../components/common/StatCard';
-import { getEmployees, createEmployee, updateEmployee, transferEmployee } from '../lib/employees';
+import { getEmployees, createEmployee, updateEmployee, deleteEmployee, transferEmployee } from '../lib/employees';
 import { getAllHospitals } from '../lib/hospitals';
 import { getAllDepartments } from '../lib/departments';
 
@@ -124,6 +124,14 @@ export default function EmployeesPage() {
     if (!confirm(`Are you sure you want to ${newStatus === 'active' ? 'activate' : 'deactivate'} ${e.full_name}?`)) return;
     try {
       await updateEmployee(String(e.id), { status: newStatus });
+      loadEmployees(pagination.page);
+    } catch (err: any) { alert(err.message); }
+  };
+
+  const handleDelete = async (e: Employee) => {
+    if (!confirm(`Delete ${e.full_name} (${e.staff_id}) permanently? This cannot be undone.`)) return;
+    try {
+      await deleteEmployee(String(e.id));
       loadEmployees(pagination.page);
     } catch (err: any) { alert(err.message); }
   };
@@ -262,6 +270,7 @@ export default function EmployeesPage() {
                         <button onClick={() => handleToggleStatus(e)} className="btn btn-sm btn-secondary">
                           {e.status === 'active' ? 'Deactivate' : 'Activate'}
                         </button>
+                        {canManage && <button onClick={() => handleDelete(e)} className="btn btn-sm btn-danger"><Trash2 size={14} /></button>}
                       </div>
                     </td>
                   </tr>
