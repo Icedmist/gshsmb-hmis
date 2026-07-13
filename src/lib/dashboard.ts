@@ -8,6 +8,9 @@ export interface DashboardStats {
 }
 
 export const getDashboardStats = async (hospitalScope?: string): Promise<DashboardStats> => {
+  const hospFilters: FilterConstraint[] = [{ field: 'status', op: '==', value: 'active' }];
+  if (hospitalScope) hospFilters.push({ field: '__name__', op: '==', value: hospitalScope });
+
   const deptFilters: FilterConstraint[] = [{ field: 'status', op: '==', value: 'active' }];
   if (hospitalScope) deptFilters.push({ field: 'hospital_id', op: '==', value: hospitalScope });
 
@@ -18,7 +21,7 @@ export const getDashboardStats = async (hospitalScope?: string): Promise<Dashboa
   if (hospitalScope) activeEmpFilters.push({ field: 'hospital_id', op: '==', value: hospitalScope });
 
   const [total_hospitals, total_departments, total_employees, active_employees] = await Promise.all([
-    countDocs('hospitals', [{ field: 'status', op: '==', value: 'active' }]),
+    countDocs('hospitals', hospFilters),
     countDocs('departments', deptFilters),
     countDocs('employees', empFilters),
     countDocs('employees', activeEmpFilters),

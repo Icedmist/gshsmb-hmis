@@ -41,6 +41,9 @@ export default function DepartmentsPage() {
       })) as Department[];
       setDepartments(depts);
       setPagination({ page, limit: 50, total: result.total, totalPages: Math.ceil(result.total / 50) });
+    } catch {
+      setDepartments([]);
+      setPagination({ page: 1, limit: 50, total: 0, totalPages: 0 });
     } finally {
       setLoading(false);
     }

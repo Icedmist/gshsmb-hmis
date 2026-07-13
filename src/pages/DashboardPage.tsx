@@ -69,7 +69,7 @@ export default function DashboardPage() {
     if (!silent) setIsRefreshing(true);
     try {
       const hospitalScope = user?.role === 'hospital_admin' ? (user.hospital_id || undefined) : undefined;
-      const [s, eph, epd, re, rt, ra] = await Promise.all([
+      const results = await Promise.allSettled([
         getDashboardStats(hospitalScope),
         getEmployeesPerHospital(hospitalScope),
         getEmployeesPerDepartment(hospitalScope),
@@ -77,12 +77,13 @@ export default function DashboardPage() {
         getRecentTransfers(hospitalScope),
         getRecentActivities(hospitalScope),
       ]);
-      setStats(s);
-      setEmpPerHospital((eph as any[]).map(h => ({ name: h.hospital_name, value: parseInt(h.employee_count) })));
-      setEmpPerDept((epd as any[]).map(d => ({ name: d.department_name, value: parseInt(d.employee_count) })));
-      setRecentEmployees(Array.isArray(re) ? re : []);
-      setRecentTransfers(Array.isArray(rt) ? rt : []);
-      setRecentActivities(Array.isArray(ra) ? ra : []);
+      const [s, eph, epd, re, rt, ra] = results.map(r => r.status === 'fulfilled' ? r.value : undefined);
+      if (s) setStats(s as DashboardStats);
+      if (eph) setEmpPerHospital((eph as any[]).map(h => ({ name: h.hospital_name, value: parseInt(h.employee_count) })));
+      if (epd) setEmpPerDept((epd as any[]).map(d => ({ name: d.department_name, value: parseInt(d.employee_count) })));
+      if (re) setRecentEmployees(Array.isArray(re) ? re : []);
+      if (rt) setRecentTransfers(Array.isArray(rt) ? rt : []);
+      if (ra) setRecentActivities(Array.isArray(ra) ? ra : []);
       setLastUpdated(new Date());
     } finally {
       setLoading(false);

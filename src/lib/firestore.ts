@@ -51,6 +51,20 @@ export const getDocById = async (col: string, id: string): Promise<any | null> =
   return docToData(snap);
 };
 
+const buildQueryConstraints = (
+  filters: FilterConstraint[] = [],
+  orderByField?: OrderConstraint,
+): QueryConstraint[] => {
+  const constraints: QueryConstraint[] = [];
+  for (const f of filters) {
+    constraints.push(where(f.field, f.op, f.value));
+  }
+  if (orderByField) {
+    constraints.push(orderBy(orderByField.field, orderByField.dir || 'asc'));
+  }
+  return constraints;
+};
+
 export const getDocsPaginated = async (
   col: string,
   filters: FilterConstraint[] = [],
@@ -58,36 +72,56 @@ export const getDocsPaginated = async (
   pageSize: number = 50,
   pageNum: number = 1,
 ): Promise<PaginationResult<any>> => {
-  const constraints: QueryConstraint[] = [];
-  for (const f of filters) {
-    constraints.push(where(f.field, f.op, f.value));
-  }
-  if (orderByField) {
-    constraints.push(orderBy(orderByField.field, orderByField.dir || 'asc'));
-  }
+  let constraints: QueryConstraint[];
 
-  // Get total count
-  const countQuery = query(collection(db, col), ...constraints);
-  const countSnap = await getDocs(countQuery);
-  const total = countSnap.size;
+  try {
+    constraints = buildQueryConstraints(filters, orderByField);
 
-  // Get paginated data
-  const dataConstraints = [...constraints, firestoreLimit(pageSize)];
-  if (pageNum > 1) {
-    // For simplicity, offset-based pagination
-    const allDataQuery = query(collection(db, col), ...constraints, firestoreLimit(pageSize * pageNum));
-    const allSnap = await getDocs(allDataQuery);
-    const allDocs = allSnap.docs;
-    const startIdx = (pageNum - 1) * pageSize;
-    const pageDocs = allDocs.slice(startIdx, startIdx + pageSize);
-    const data = pageDocs.map(docToData);
+    // Get total count
+    const countQuery = query(collection(db, col), ...constraints);
+    const countSnap = await getDocs(countQuery);
+    const total = countSnap.size;
+
+    // Get paginated data
+    const dataConstraints = [...constraints, firestoreLimit(pageSize)];
+    if (pageNum > 1) {
+      const allDataQuery = query(collection(db, col), ...constraints, firestoreLimit(pageSize * pageNum));
+      const allSnap = await getDocs(allDataQuery);
+      const allDocs = allSnap.docs;
+      const startIdx = (pageNum - 1) * pageSize;
+      const pageDocs = allDocs.slice(startIdx, startIdx + pageSize);
+      const data = pageDocs.map(docToData);
+      return { data, total };
+    }
+
+    const dataQuery = query(collection(db, col), ...dataConstraints);
+    const dataSnap = await getDocs(dataQuery);
+    const data = dataSnap.docs.map(docToData);
     return { data, total };
-  }
+  } catch (err) {
+    // Fallback: if query failed (e.g. missing composite index), fetch without orderBy and sort in JS
+    if (filters.length > 0 && orderByField) {
+      const fallbackConstraints = buildQueryConstraints(filters);
+      const allSnap = await getDocs(query(collection(db, col), ...fallbackConstraints));
+      let allData = allSnap.docs.map(docToData);
 
-  const dataQuery = query(collection(db, col), ...dataConstraints);
-  const dataSnap = await getDocs(dataQuery);
-  const data = dataSnap.docs.map(docToData);
-  return { data, total };
+      // Sort in JS
+      const dir = orderByField.dir || 'asc';
+      allData.sort((a: any, b: any) => {
+        const aVal = a[orderByField.field] ?? '';
+        const bVal = b[orderByField.field] ?? '';
+        return dir === 'desc'
+          ? String(bVal).localeCompare(String(aVal))
+          : String(aVal).localeCompare(String(bVal));
+      });
+
+      const total = allData.length;
+      const start = (pageNum - 1) * pageSize;
+      const data = allData.slice(start, start + pageSize);
+      return { data, total };
+    }
+    throw err;
+  }
 };
 
 export const getDocsAll = async (
@@ -95,16 +129,30 @@ export const getDocsAll = async (
   filters: FilterConstraint[] = [],
   orderByField?: OrderConstraint,
 ): Promise<any[]> => {
-  const constraints: QueryConstraint[] = [];
-  for (const f of filters) {
-    constraints.push(where(f.field, f.op, f.value));
+  try {
+    const constraints = buildQueryConstraints(filters, orderByField);
+    const q = query(collection(db, col), ...constraints);
+    const snap = await getDocs(q);
+    return snap.docs.map(docToData);
+  } catch (err) {
+    // Fallback: missing composite index — fetch without orderBy and sort in JS
+    if (filters.length > 0 && orderByField) {
+      const fallbackConstraints = buildQueryConstraints(filters);
+      const allSnap = await getDocs(query(collection(db, col), ...fallbackConstraints));
+      const allData = allSnap.docs.map(docToData);
+
+      const dir = orderByField.dir || 'asc';
+      allData.sort((a: any, b: any) => {
+        const aVal = a[orderByField.field] ?? '';
+        const bVal = b[orderByField.field] ?? '';
+        return dir === 'desc'
+          ? String(bVal).localeCompare(String(aVal))
+          : String(aVal).localeCompare(String(bVal));
+      });
+      return allData;
+    }
+    throw err;
   }
-  if (orderByField) {
-    constraints.push(orderBy(orderByField.field, orderByField.dir || 'asc'));
-  }
-  const q = query(collection(db, col), ...constraints);
-  const snap = await getDocs(q);
-  return snap.docs.map(docToData);
 };
 
 export const addDocument = async (col: string, data: DocumentData): Promise<string> => {

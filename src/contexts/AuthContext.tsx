@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User as FirebaseUser } from 'firebase/auth';
+import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import { User as FirebaseUser, browserLocalPersistence, setPersistence } from 'firebase/auth';
 import {
   loginUser,
   logoutUser,
@@ -9,6 +9,7 @@ import {
   onAuthStateChange,
   UserProfile,
 } from '../lib/auth';
+import { auth } from '../lib/firebase';
 import { UserRole } from '../types';
 
 interface AuthContextType {
@@ -26,39 +27,120 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthContextType['user']>(null);
   const [loading, setLoading] = useState(true);
+  const unsubRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChange(async (firebaseUser: FirebaseUser | null) => {
+    let cancelled = false;
+
+    const restore = async () => {
+      // 1. Ensure Firebase persistence is localStorage
+      await setPersistence(auth, browserLocalPersistence).catch(() => {});
+
+      if (cancelled) return;
+
+      // 2. Restore cached user immediately
+      const savedUser = localStorage.getItem('gshsmb_user');
+
+      // 3. Check current Firebase auth session (populated after persistence is ready)
+      const firebaseUser = auth.currentUser;
+
       if (firebaseUser) {
+        // Firebase has a valid session — verify profile from Firestore
         try {
           const profile = await getUserProfile(firebaseUser.uid);
           if (profile && profile.status === 'active') {
             const { firebase_uid, created_at, updated_at, ...safe } = profile;
             setUser(safe);
-          } else {
+            localStorage.setItem('gshsmb_user', JSON.stringify(safe));
+          } else if (profile && profile.status !== 'active') {
+            localStorage.removeItem('gshsmb_user');
             setUser(null);
+          } else if (savedUser) {
+            // Profile not found but cache exists — keep cached user
+            try {
+              const parsed = JSON.parse(savedUser);
+              if (parsed && parsed.id && parsed.email && parsed.role) {
+                setUser(parsed as AuthContextType['user']);
+              }
+            } catch {}
           }
         } catch {
-          setUser(null);
+          // Network error — use cached user if available
+          if (savedUser) {
+            try {
+              const parsed = JSON.parse(savedUser);
+              if (parsed && parsed.id && parsed.email && parsed.role) {
+                setUser(parsed as AuthContextType['user']);
+              }
+            } catch {}
+          }
         }
-      } else {
-        setUser(null);
+      } else if (savedUser) {
+        // No Firebase session but cache exists — restore from cache
+        try {
+          const parsed = JSON.parse(savedUser);
+          if (parsed && parsed.id && parsed.email && parsed.role) {
+            setUser(parsed as AuthContextType['user']);
+          }
+        } catch {
+          localStorage.removeItem('gshsmb_user');
+        }
       }
-      setLoading(false);
-    });
 
-    return () => unsubscribe();
+      setLoading(false);
+
+      // 4. Subscribe to future auth changes
+      const unsub = onAuthStateChange(async (fbUser: FirebaseUser | null) => {
+        if (cancelled) return;
+
+        if (fbUser) {
+          try {
+            const profile = await getUserProfile(fbUser.uid);
+            if (profile && profile.status === 'active') {
+              const { firebase_uid, created_at, updated_at, ...safe } = profile;
+              setUser(safe);
+              localStorage.setItem('gshsmb_user', JSON.stringify(safe));
+            } else if (profile && profile.status !== 'active') {
+              localStorage.removeItem('gshsmb_user');
+              setUser(null);
+            }
+          } catch {
+            // keep cached user
+          }
+        } else {
+          // Only clear if no cache — otherwise keep the cached user
+          if (!localStorage.getItem('gshsmb_user')) {
+            setUser(null);
+          }
+        }
+      });
+
+      unsubRef.current = unsub;
+    };
+
+    restore();
+
+    // Safety fallback: stop loading after 5s
+    const fallbackTimer = setTimeout(() => setLoading(false), 5000);
+
+    return () => {
+      cancelled = true;
+      unsubRef.current?.();
+      clearTimeout(fallbackTimer);
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
     const { profile } = await loginUser(email, password);
     const { firebase_uid, created_at, updated_at, ...safe } = profile;
     setUser(safe);
+    localStorage.setItem('gshsmb_user', JSON.stringify(safe));
   };
 
   const logout = async () => {
     await logoutUser();
     setUser(null);
+    localStorage.removeItem('gshsmb_user');
   };
 
   const changePassword = async (current: string, newPassword: string) => {

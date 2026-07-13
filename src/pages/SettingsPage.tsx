@@ -45,21 +45,41 @@ export default function SettingsPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (file.size > 2 * 1024 * 1024) {
+      setError('File size must be under 2MB.');
+      e.target.value = '';
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      setError('Only image files are allowed.');
+      e.target.value = '';
+      return;
+    }
+
     setUploading(true);
     setError('');
     try {
       const ext = file.name.split('.').pop();
-      const storageRef = ref(storage, `avatars/${user!.id}-${Date.now()}.${ext}`);
+      const storageRef = ref(storage, `avatars/${user!.id}/${Date.now()}.${ext}`);
+      console.log('Uploading to:', storageRef.fullPath);
       await uploadBytes(storageRef, file);
-      const avatarUrl = await getDownloadURL(storageRef);
-      await updateUser(user!.id, { avatar_url: avatarUrl });
-      setAvatarUrl(avatarUrl);
+      console.log('Upload complete, getting download URL...');
+      const downloadUrl = await getDownloadURL(storageRef);
+      console.log('Download URL obtained:', downloadUrl);
+      await updateUser(user!.id, { avatar_url: downloadUrl });
+      setAvatarUrl(downloadUrl);
       setMessage('Profile picture updated!');
       setTimeout(() => setMessage(''), 3000);
     } catch (err: any) {
-      setError(err.message);
+      console.error('Avatar upload error:', err);
+      const msg = err.code
+        ? `Storage error (${err.code}): ${err.message}`
+        : err.message || 'Upload failed. Check that Firebase Storage is enabled in the Firebase Console.';
+      setError(msg);
     } finally {
       setUploading(false);
+      e.target.value = '';
     }
   };
 
