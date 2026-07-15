@@ -64,31 +64,40 @@ const users = [
 async function seed() {
   for (const user of users) {
     try {
-      const userRecord = await auth.createUser({
-        email: user.email,
-        password: user.password,
-        displayName: user.displayName,
-        emailVerified: true,
-      });
+      let uid: string;
+      try {
+        const userRecord = await auth.createUser({
+          email: user.email,
+          password: user.password,
+          displayName: user.displayName,
+          emailVerified: true,
+        });
+        uid = userRecord.uid;
+        console.log(`✓ Created Auth user for ${user.role}: ${user.email}`);
+      } catch (error: any) {
+        if (error.code === 'auth/email-already-exists') {
+          const userRecord = await auth.getUserByEmail(user.email);
+          uid = userRecord.uid;
+          console.log(`- Auth user already exists: ${user.email}`);
+        } else {
+          throw error;
+        }
+      }
 
-      await db.collection('users').doc(userRecord.uid).set({
-        firebase_uid: userRecord.uid,
+      await db.collection('users').doc(uid).set({
+        firebase_uid: uid,
         email: user.email,
-        display_name: user.displayName,
+        full_name: user.displayName,
         role: user.role,
         hospital_id: user.hospital_id,
-        is_active: true,
+        status: 'active',
         created_at: new Date(),
         updated_at: new Date(),
       });
 
-      console.log(`✓ Created ${user.role}: ${user.email}`);
+      console.log(`✓ Updated Firestore profile for ${user.email}`);
     } catch (error: any) {
-      if (error.code === 'auth/email-already-exists') {
-        console.log(`- Skipped (exists): ${user.email}`);
-      } else {
-        console.error(`✗ Failed ${user.email}:`, error.message);
-      }
+      console.error(`✗ Failed ${user.email}:`, error.message);
     }
   }
 

@@ -32,27 +32,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
 
-    const restore = async () => {
-      // 1. Ensure Firebase persistence is localStorage
-      await setPersistence(auth, browserLocalPersistence).catch(() => {});
+    const isActive = (profile: any) => {
+      if (!profile) return false;
+      if (profile.status !== undefined) return profile.status === 'active';
+      if (profile.is_active !== undefined) return profile.is_active === true;
+      return true;
+    };
 
+    const restore = async () => {
       if (cancelled) return;
 
-      // 2. Restore cached user immediately
+      // 1. Restore cached user immediately
       const savedUser = localStorage.getItem('gshsmb_user');
 
-      // 3. Check current Firebase auth session (populated after persistence is ready)
+      // 2. Check current Firebase auth session
       const firebaseUser = auth.currentUser;
 
       if (firebaseUser) {
         // Firebase has a valid session — verify profile from Firestore
         try {
           const profile = await getUserProfile(firebaseUser.uid);
-          if (profile && profile.status === 'active') {
+          if (profile && isActive(profile)) {
             const { firebase_uid, created_at, updated_at, ...safe } = profile;
             setUser(safe);
             localStorage.setItem('gshsmb_user', JSON.stringify(safe));
-          } else if (profile && profile.status !== 'active') {
+          } else if (profile && !isActive(profile)) {
             localStorage.removeItem('gshsmb_user');
             setUser(null);
           } else if (savedUser) {
@@ -89,18 +93,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setLoading(false);
 
-      // 4. Subscribe to future auth changes
+      // 3. Subscribe to future auth changes
       const unsub = onAuthStateChange(async (fbUser: FirebaseUser | null) => {
         if (cancelled) return;
 
         if (fbUser) {
           try {
             const profile = await getUserProfile(fbUser.uid);
-            if (profile && profile.status === 'active') {
+            if (profile && isActive(profile)) {
               const { firebase_uid, created_at, updated_at, ...safe } = profile;
               setUser(safe);
               localStorage.setItem('gshsmb_user', JSON.stringify(safe));
-            } else if (profile && profile.status !== 'active') {
+            } else if (profile && !isActive(profile)) {
               localStorage.removeItem('gshsmb_user');
               setUser(null);
             }

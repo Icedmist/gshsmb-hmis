@@ -42,9 +42,7 @@
         "*.local"
       ],
       "predeploy": [
-        "echo 'Building functions...'",
-        "echo 'Skipping predeploy build - will build manually'",
-        "echo 'Run: cd functions && npm install && npm run build'"
+        "npm --prefix functions run build"
       ]
     }
   ]
