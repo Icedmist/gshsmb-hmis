@@ -30,7 +30,7 @@ export default function TopNav({ onMenuClick }: TopNavProps) {
 
   return (
     <>
-      <header className="h-16 bg-white/90 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-4 lg:px-6 sticky top-0 z-30">
+      <header className="h-16 bg-white/80 backdrop-blur-xl border-b border-slate-200/60 flex items-center justify-between px-4 lg:px-6 sticky top-0 z-30">
         <div className="flex items-center gap-4">
           <button
             onClick={onMenuClick}
@@ -39,15 +39,15 @@ export default function TopNav({ onMenuClick }: TopNavProps) {
             <Menu size={20} />
           </button>
           <div className="hidden lg:flex items-center gap-3">
-            <div className="w-2.5 h-2.5 rounded-full relative">
-              <div className="absolute inset-0 rounded-full bg-[#008751] animate-ping opacity-40" />
+            <div className="w-2 h-2 rounded-full relative">
+              <div className="absolute inset-0 rounded-full bg-[#008751] animate-ping opacity-30" />
               <div className="absolute inset-0 rounded-full bg-emerald-500" />
             </div>
-            <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
-              {user?.role?.replace('_', ' ') || 'Dashboard'}
+            <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider">
+              {user?.role?.replace(/_/g, ' ')}
             </span>
             <div className="w-px h-4 bg-slate-200 mx-1" />
-            <span className="text-xs text-slate-300">
+            <span className="text-xs text-slate-400 tabular-nums">
               {new Date().toLocaleDateString('en-NG', { weekday: 'short', month: 'short', day: 'numeric' })}
             </span>
           </div>
@@ -65,14 +65,13 @@ export default function TopNav({ onMenuClick }: TopNavProps) {
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setShowMenu(!showMenu)}
-              className="flex items-center gap-3 text-sm text-slate-700 hover:text-slate-900 transition-all rounded-xl hover:bg-slate-50 pl-3 pr-2 py-1.5 border border-transparent hover:border-slate-200 shadow-sm hover:shadow"
+              className="flex items-center gap-2.5 text-sm text-slate-700 hover:text-slate-900 transition-all rounded-xl hover:bg-slate-50 pl-2.5 pr-2 py-1.5 border border-transparent hover:border-slate-200 shadow-sm hover:shadow"
             >
               <div className="hidden sm:block text-right">
                 <p className="text-sm font-semibold text-slate-900 leading-tight">{user?.full_name}</p>
-                <p className="text-[11px] text-slate-400 capitalize">{user?.role?.replace(/_/g, ' ')}</p>
+                <p className="text-[11px] text-slate-500 capitalize">{user?.role?.replace(/_/g, ' ')}</p>
               </div>
-              <div className="w-9 h-9 rounded-xl overflow-hidden shadow-sm ring-2 ring-slate-100 relative"
-                style={{ background: 'linear-gradient(135deg, #008751, #006838)' }}>
+              <div className="w-9 h-9 rounded-xl overflow-hidden shadow-sm ring-2 ring-emerald-100 relative bg-gradient-to-br from-emerald-600 to-emerald-800">
                 {user?.avatar_url ? (
                   <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
                 ) : (
@@ -85,11 +84,10 @@ export default function TopNav({ onMenuClick }: TopNavProps) {
             </button>
 
             {showMenu && (
-              <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200 z-50 py-1.5 overflow-hidden animate-scale-in">
+              <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl shadow-slate-900/10 border border-slate-200 z-50 py-1.5 overflow-hidden animate-scale-in">
                 <div className="px-4 py-4 border-b border-slate-100">
                   <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-xl overflow-hidden ring-2 ring-[#008751]/20 shadow-sm relative"
-                      style={{ background: 'linear-gradient(135deg, #008751, #006838)' }}>
+                    <div className="w-11 h-11 rounded-xl overflow-hidden ring-2 ring-emerald-200/60 shadow-sm relative bg-gradient-to-br from-emerald-600 to-emerald-800">
                       {user?.avatar_url ? (
                         <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
                       ) : (

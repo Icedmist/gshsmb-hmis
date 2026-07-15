@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { ReferralStatistic, EmergencyReport, Pagination as PaginationType } from '../types';
 import Modal from '../components/common/Modal';
 import Pagination from '../components/common/Pagination';
@@ -13,8 +14,9 @@ type TabType = 'referral' | 'emergency';
 
 export default function ReferralOversightPage() {
   const { hasRole } = useAuth();
+  const location = useLocation();
   const canManage = hasRole('super_admin', 'director_medical_services', 'hospital_admin');
-  const [activeTab, setActiveTab] = useState<TabType>('referral');
+  const [activeTab, setActiveTab] = useState<TabType>(location.pathname === '/emergency-reports' ? 'emergency' : 'referral');
 
   // Referral state
   const [referrals, setReferrals] = useState<ReferralStatistic[]>([]);

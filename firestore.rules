@@ -34,6 +34,34 @@ service cloud.firestore {
       return !isHospitalAdmin() || getUserProfile().hospital_id == resourceHospitalId;
     }
     
+    function isDirectorNursing() {
+      return isAuthenticated() && getUserProfile().role == 'director_nursing_services';
+    }
+    
+    function isDirectorMedical() {
+      return isAuthenticated() && getUserProfile().role == 'director_medical_services';
+    }
+    
+    function isDirectorPharmaceutical() {
+      return isAuthenticated() && getUserProfile().role == 'director_pharmaceutical_services';
+    }
+    
+    function isDirectorLaboratory() {
+      return isAuthenticated() && getUserProfile().role == 'director_laboratory_services';
+    }
+    
+    function isDirectorPRS() {
+      return isAuthenticated() && getUserProfile().role == 'director_prs';
+    }
+    
+    function isDirector() {
+      return isDirectorNursing() || isDirectorMedical() || isDirectorPharmaceutical() || isDirectorLaboratory() || isDirectorPRS();
+    }
+    
+    function canManageContent() {
+      return isAdmin() || isExecutiveSecretary() || isHospitalAdmin() || isHROfficer() || isDirector();
+    }
+    
     function isOwnUser(resourceId) {
       return isAuthenticated() && request.auth.uid == resourceId;
     }
@@ -99,6 +127,57 @@ service cloud.firestore {
     match /_health/{docId} {
       allow read: if true;
       allow write: if false;
+    }
+
+    // Nursing collections
+    match /nursingWorkforce/{docId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() || isDirectorNursing();
+      allow update: if isAdmin() || isDirectorNursing();
+      allow delete: if isAdmin();
+    }
+
+    match /nursingAudits/{docId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() || isDirectorNursing();
+      allow update: if isAdmin() || isDirectorNursing();
+      allow delete: if isAdmin();
+    }
+
+    match /nursingSupervisionReports/{docId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() || isDirectorNursing();
+      allow update: if isAdmin() || isDirectorNursing();
+      allow delete: if isAdmin();
+    }
+
+    match /trainingPrograms/{docId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() || isDirectorNursing() || isHROfficer();
+      allow update: if isAdmin() || isDirectorNursing() || isHROfficer();
+      allow delete: if isAdmin();
+    }
+
+    match /trainingAttendance/{docId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() || isDirectorNursing() || isHROfficer();
+      allow update: if isAdmin() || isDirectorNursing() || isHROfficer();
+      allow delete: if isAdmin();
+    }
+
+    match /certifications/{docId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() || isDirectorNursing();
+      allow update: if isAdmin() || isDirectorNursing();
+      allow delete: if isAdmin();
+    }
+
+    // Catch-all for all other specialty collections
+    // (medical, pharmaceutical, laboratory, PRS, and any future collections)
+    match /{collection}/{docId} {
+      allow read: if isAuthenticated();
+      allow create, update: if canManageContent();
+      allow delete: if isAdmin();
     }
   }
 }

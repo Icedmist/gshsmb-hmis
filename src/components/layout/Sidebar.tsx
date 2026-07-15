@@ -3,12 +3,12 @@ import { useAuth } from '../../contexts/AuthContext';
 import {
   LayoutDashboard, Building2, Building, Users,
   Shield, ClipboardList, Settings, X,
-  ArrowRightLeft, FileText, ChevronRight, Sparkles,
+  ArrowRight, ArrowRightLeft, FileText, ChevronRight, Sparkles,
   Stethoscope, Activity, AlertTriangle, Heart,
   GraduationCap, Target, BarChart3, TrendingUp,
   BookOpen, Pill, FlaskConical, Thermometer,
   Wrench, Syringe, AlertCircle, Microscope,
-  ClipboardCheck,
+  ClipboardCheck, Award,
 } from 'lucide-react';
 import { UserRole } from '../../types';
 import logoSrc from '../../assets/logo.jpeg';
@@ -42,7 +42,8 @@ const sections: { label: string; color: string; items: NavItem[] }[] = [
       { to: '/clinical-guidelines', label: 'Clinical Guidelines', icon: FileText, roles: ['director_medical_services' as UserRole], color: '#0d9488', bg: 'from-teal-500 to-teal-600', lightBg: 'bg-teal-50' },
       { to: '/clinical-audits', label: 'Clinical Audits', icon: ClipboardList, roles: ['director_medical_services' as UserRole], color: '#d97706', bg: 'from-amber-500 to-amber-600', lightBg: 'bg-amber-50' },
       { to: '/specialists', label: 'Specialists', icon: Activity, roles: ['director_medical_services' as UserRole, 'hr_officer' as UserRole], color: '#0284c7', bg: 'from-sky-500 to-sky-600', lightBg: 'bg-sky-50' },
-      { to: '/referral-oversight', label: 'Referral & Emergency', icon: AlertTriangle, roles: ['director_medical_services' as UserRole, 'hospital_admin' as UserRole], color: '#ea580c', bg: 'from-orange-500 to-orange-600', lightBg: 'bg-orange-50' },
+      { to: '/referral-reports', label: 'Referral Reports', icon: ArrowRight, roles: ['director_medical_services' as UserRole], color: '#ea580c', bg: 'from-orange-500 to-orange-600', lightBg: 'bg-orange-50' },
+      { to: '/emergency-reports', label: 'Emergency Reports', icon: AlertTriangle, roles: ['director_medical_services' as UserRole], color: '#e11d48', bg: 'from-rose-500 to-rose-600', lightBg: 'bg-rose-50' },
     ],
   },
   {
@@ -52,6 +53,7 @@ const sections: { label: string; color: string; items: NavItem[] }[] = [
       { to: '/nursing-workforce', label: 'Workforce Monitoring', icon: Users, roles: ['director_nursing_services' as UserRole], color: '#0d9488', bg: 'from-teal-500 to-teal-600', lightBg: 'bg-teal-50' },
       { to: '/nursing-audits', label: 'Nursing Audits', icon: ClipboardList, roles: ['director_nursing_services' as UserRole], color: '#6366f1', bg: 'from-indigo-500 to-indigo-600', lightBg: 'bg-indigo-50' },
       { to: '/nursing-training', label: 'Training Programmes', icon: GraduationCap, roles: ['director_nursing_services' as UserRole, 'hr_officer' as UserRole], color: '#7c3aed', bg: 'from-violet-500 to-violet-600', lightBg: 'bg-violet-50' },
+      { to: '/nursing-certifications', label: 'Certifications', icon: Award, roles: ['director_nursing_services' as UserRole], color: '#008751', bg: 'from-emerald-600 to-emerald-700', lightBg: 'bg-emerald-50' },
     ],
   },
   {
@@ -116,27 +118,26 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden" onClick={onClose} />
       )}
       <aside className={`fixed top-0 left-0 z-50 h-full w-64 transform transition-all duration-300 ease-in-out lg:translate-x-0 lg:static lg:z-auto shadow-xl lg:shadow-none flex flex-col ${open ? 'translate-x-0' : '-translate-x-full'}`}
-        style={{ background: '#d9eab3' }}
+        style={{ background: '#f1f5ee' }}
       >
-        {/* Decorative top accent */}
         <div className="absolute top-0 left-0 right-0 h-1 flex">
-          <div className="flex-1 bg-[#008751]" />
-          <div className="flex-1 bg-[#84cc16]" />
-          <div className="flex-1 bg-[#008751]" />
+          <div className="flex-1 bg-emerald-600" />
+          <div className="flex-1 bg-lime-500" />
+          <div className="flex-1 bg-emerald-600" />
         </div>
 
         {/* Logo */}
-        <div className="relative flex items-center justify-between h-16 px-5 border-b border-emerald-700/10 flex-shrink-0 bg-white/70 backdrop-blur-sm">
+        <div className="relative flex items-center justify-between h-16 px-5 border-b border-emerald-200/40 flex-shrink-0 bg-white/60 backdrop-blur-sm">
           <Link to="/dashboard" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm overflow-hidden bg-white p-1.5 ring-2 ring-emerald-700/20 group-hover:ring-emerald-600/40 transition-all">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm overflow-hidden bg-white p-1.5 ring-2 ring-emerald-700/15 group-hover:ring-emerald-600/30 transition-all">
               <img src={logoSrc} alt="GSHSMB" className="w-full h-full object-contain" />
             </div>
             <div>
               <h1 className="text-sm font-bold text-emerald-900 leading-tight">GSHSMB</h1>
-              <p className="text-[10px] text-emerald-700/60 leading-tight tracking-wide">HMIS Portal</p>
+              <p className="text-[10px] text-emerald-600/50 leading-tight tracking-wide font-medium">HMIS Portal</p>
             </div>
           </Link>
-          <button onClick={onClose} className="lg:hidden text-emerald-700/50 hover:text-emerald-800 transition-colors p-1 rounded-lg hover:bg-white/60">
+          <button onClick={onClose} className="lg:hidden text-emerald-600/50 hover:text-emerald-800 transition-colors p-1 rounded-lg hover:bg-white/60">
             <X size={18} />
           </button>
         </div>
@@ -149,7 +150,6 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
               if (visibleItems.length === 0) return null;
               return (
                 <div key={section.label}>
-                  {/* Section header */}
                   <div className="flex items-center gap-2 px-3 mb-1">
                     <div className="h-px flex-1" style={{ background: `linear-gradient(to right, ${section.color}40, transparent)` }} />
                     <span className="text-[9px] uppercase tracking-[0.2em] font-semibold px-1" style={{ color: section.color }}>
@@ -167,7 +167,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                           `group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative ${
                             isActive
                               ? 'text-white shadow-md shadow-emerald-900/15'
-                              : 'text-emerald-800 hover:text-emerald-950'
+                              : 'text-emerald-800/80 hover:text-emerald-950'
                           }`
                         }
                       >
@@ -180,7 +180,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                               </>
                             )}
                             {!isActive && (
-                              <span className="absolute inset-0 rounded-xl bg-white/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 backdrop-blur-sm" />
+                              <span className="absolute inset-0 rounded-xl bg-white/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200 backdrop-blur-sm" />
                             )}
                             <div className={`flex-shrink-0 relative z-10 p-1.5 rounded-lg transition-all duration-200 ${
                               isActive

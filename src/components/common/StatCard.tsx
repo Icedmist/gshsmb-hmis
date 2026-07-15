@@ -107,17 +107,17 @@ export default function StatCard({ title, value, icon: Icon, color = 'primary', 
     <div className={`card p-5 hover:shadow-lg transition-all duration-300 group animate-slide-up ${v.bg}`}>
       <div className="flex items-start justify-between">
         <div className="space-y-1">
-          <p className="text-sm font-semibold text-slate-500 tracking-wide">{title}</p>
+          <p className="text-xs font-semibold text-slate-500 tracking-wide uppercase">{title}</p>
           <p className={`stat-value ${v.text} group-hover:scale-105 transition-transform origin-left`}>
             <AnimatedValue value={value} />
           </p>
-          {subtitle && <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>}
+          {subtitle && <p className="text-xs text-slate-400/80 mt-0.5">{subtitle}</p>}
         </div>
-        <div className={`p-3.5 rounded-2xl shadow-sm ${v.iconBg} ${v.ring} ring-2`}>
-          <Icon size={22} className="text-white" />
+        <div className={`p-3 rounded-2xl shadow-sm ${v.iconBg} ${v.ring} ring-2 group-hover:scale-110 transition-transform duration-300`}>
+          <Icon size={20} className="text-white" />
         </div>
       </div>
-      <div className="mt-4 flex items-center justify-between">
+      <div className="mt-3 flex items-center justify-between">
         {(trend || trendValue) && (
           <div className="flex items-center gap-1.5 text-xs font-medium">
             {trend === 'up' && <TrendingUp size={14} className="text-emerald-500" />}

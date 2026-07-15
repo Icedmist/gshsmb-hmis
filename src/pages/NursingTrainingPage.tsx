@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import type { Pagination as PaginationType } from '../types';
 import Modal from '../components/common/Modal';
 import Pagination from '../components/common/Pagination';
@@ -18,7 +19,8 @@ export default function NursingTrainingPage() {
   const [editItem, setEditItem] = useState<any | null>(null);
   const [form, setForm] = useState({ title: '', description: '', start_date: '', end_date: '', participants: '', status: 'active' });
   const [certForm, setCertForm] = useState({ employee_id: '', certification_name: '', issuing_body: '', certificate_number: '', issue_date: '', expiry_date: '', status: 'active' });
-  const [tab, setTab] = useState<'programs' | 'certifications'>('programs');
+  const location = useLocation();
+  const [tab, setTab] = useState<'programs' | 'certifications'>(location.pathname === '/nursing-certifications' ? 'certifications' : 'programs');
   const [expandedProgram, setExpandedProgram] = useState<string | null>(null);
   const [attendance, setAttendance] = useState<any[]>([]);
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);

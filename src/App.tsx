@@ -67,9 +67,12 @@ export default function App() {
             <Route path="/clinical-audits" element={<ClinicalAuditsPage />} />
             <Route path="/specialists" element={<SpecialistsPage />} />
             <Route path="/referral-oversight" element={<ReferralOversightPage />} />
+            <Route path="/referral-reports" element={<ReferralOversightPage />} />
+            <Route path="/emergency-reports" element={<ReferralOversightPage />} />
             <Route path="/nursing-workforce" element={<NursingWorkforcePage />} />
             <Route path="/nursing-audits" element={<NursingAuditsPage />} />
             <Route path="/nursing-training" element={<NursingTrainingPage />} />
+            <Route path="/nursing-certifications" element={<NursingTrainingPage />} />
             <Route path="/kpis" element={<KPIPage />} />
             <Route path="/scorecards" element={<ScorecardsPage />} />
             <Route path="/performance-indicators" element={<PerformanceIndicatorsPage />} />

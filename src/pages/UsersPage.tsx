@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { User, Pagination as PaginationType, ROLE_LABELS } from '../types';
 import { getUsers, updateUser } from '../lib/users';
 import { getAllHospitals } from '../lib/hospitals';
-import { getFunctions, httpsCallable } from 'firebase/functions';
-import { functions } from '../lib/firebase';
+import { auth } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import Modal from '../components/common/Modal';
 import Pagination from '../components/common/Pagination';
@@ -68,15 +67,23 @@ export default function UsersPage() {
         if (form.hospital_id) payload.hospital_id = form.hospital_id;
         await updateUser(editUser.id, payload);
       } else {
-        const createUserFn = httpsCallable(functions, 'createUser');
-        await createUserFn({
-          email: form.email,
-          password: form.password,
-          fullName: form.full_name,
-          role: form.role,
-          hospitalId: form.hospital_id || undefined,
-          phoneNumber: form.phone_number || undefined,
+        const token = await auth.currentUser?.getIdToken();
+        const res = await fetch('/api/firebase/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            email: form.email,
+            password: form.password,
+            fullName: form.full_name,
+            role: form.role,
+            hospitalId: form.hospital_id || undefined,
+            phoneNumber: form.phone_number || undefined,
+          }),
         });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || 'Failed to create user.');
+        }
       }
       setShowModal(false);
       loadUsers(pagination.page);
