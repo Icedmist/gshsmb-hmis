@@ -1,47 +1,51 @@
 import { useState, useEffect, useCallback } from 'react';
-import { DashboardStats, Employee, EmployeeTransfer, ROLE_LABELS } from '../types';
+import { DashboardStats, Employee, EmployeeTransfer } from '../types';
 import StatCard from '../components/common/StatCard';
 import {
-  Building2, Building, Users, UserCheck, Shield, TrendingUp, Activity,
+  Building2, Building, Users, UserCheck, TrendingUp, Activity,
   ArrowUpRight, ArrowRightLeft, BarChart3,
-  UserPlus, CheckCircle, Calendar, Sparkles, Server, Lock, Fingerprint,
-  RefreshCw, Stethoscope, Heart, Target, Award, BookOpen, FileText, GraduationCap,
-  UserCog, UserX, FlaskConical, LogIn, AlertTriangle, XCircle,
-  Database, HardDrive, ShieldAlert, Pill, ClipboardCheck, Syringe, Wrench, Microscope,
+  UserPlus, CheckCircle, Target, BookOpen, FileText, GraduationCap,
+  UserCog, UserX, FlaskConical, AlertTriangle, XCircle,
+  Pill, ClipboardCheck, Syringe, Wrench, Microscope,
+  Shield, Layers, DollarSign, PiggyBank, TrendingDown, Wallet, Briefcase, RefreshCw, Calendar,
+  Bell, ListTodo, MessageSquare
 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getDashboardStats, getEmployeesPerHospital, getEmployeesPerDepartment, getRecentEmployees, getRecentTransfers } from '../lib/dashboard';
+import { getFinanceDashboardStats } from '../lib/finance';
 import { getDocsAll, countDocs, type FilterConstraint } from '../lib/firestore';
 
-const COLORS = ['#C06C4C', '#6B7E36', '#D4A056', '#8B5E3C', '#5C8A5E', '#C4956A', '#7A8B5B', '#B8865A', '#4A6741', '#CD7F4E'];
-const SECTION_COLORS = {
-  chart: { border: 'border-t-sky-400', icon: 'text-sky-600', header: 'text-sky-700' },
-  quick: { border: 'border-t-amber-400', icon: 'text-amber-600', header: 'text-amber-700' },
-  dept: { border: 'border-t-emerald-400', icon: 'text-emerald-600', header: 'text-emerald-700' },
-  employees: { border: 'border-t-teal-400', icon: 'text-teal-600', header: 'text-teal-700' },
-  transfers: { border: 'border-t-orange-400', icon: 'text-orange-600', header: 'text-orange-700' },
+const CHART_COLORS = ['#008751', '#22c55e', '#6b7e36', '#84cc16', '#0d9488', '#14b8a6', '#65a30d', '#4d7c0f'];
+
+const tooltipStyle = {
+  borderRadius: '12px',
+  border: '1px solid #e2e8f0',
+  boxShadow: '0 8px 30px rgba(0,0,0,0.08)',
+  padding: '10px 14px',
+  background: 'rgba(255,255,255,0.95)',
+  backdropFilter: 'blur(8px)',
 };
 
 function Skeleton() {
   return (
     <div className="space-y-6 animate-pulse">
-      <div className="bg-white rounded-2xl p-8 border border-slate-200/60">
-        <div className="h-5 bg-slate-100 rounded w-48 mb-3" />
-        <div className="h-4 bg-slate-100 rounded w-72" />
+      <div className="bg-white rounded-2xl p-8 border border-slate-200/60 shadow-sm">
+        <div className="h-5 bg-gradient-to-r from-slate-100 to-slate-50 rounded w-48 mb-3" />
+        <div className="h-4 bg-gradient-to-r from-slate-100 to-slate-50 rounded w-72" />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[1, 2, 3, 4].map(i => (
-          <div key={i} className="bg-white rounded-2xl p-5 border border-slate-200/60">
-            <div className="h-4 bg-slate-100 rounded w-24 mb-3" />
-            <div className="h-8 bg-slate-100 rounded w-16" />
+          <div key={i} className="bg-white rounded-2xl p-5 border border-slate-200/60 shadow-sm" style={{ animationDelay: `${i * 80}ms` }}>
+            <div className="h-4 bg-gradient-to-r from-slate-100 to-slate-50 rounded w-24 mb-3" />
+            <div className="h-8 bg-gradient-to-r from-slate-100 to-slate-50 rounded w-16" />
           </div>
         ))}
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-slate-200/60 h-80" />
-        <div className="bg-white rounded-2xl p-6 border border-slate-200/60 h-80" />
+        <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-slate-200/60 shadow-sm h-80" />
+        <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-sm h-80" />
       </div>
     </div>
   );
@@ -62,18 +66,15 @@ export default function DashboardPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Phase 2 executive data
   const [hospitalRankings, setHospitalRankings] = useState<any[]>([]);
   const [kpiSummary, setKpiSummary] = useState({ total: 0, achieved: 0, rate: 0 });
   const [clinicalAuditCount, setClinicalAuditCount] = useState(0);
   const [nursingAuditCount, setNursingAuditCount] = useState(0);
   const [researchCount, setResearchCount] = useState(0);
 
-  // Super Admin data
   const [totalUsers, setTotalUsers] = useState(0);
   const [activeUsers, setActiveUsers] = useState(0);
   const [inactiveUsers, setInactiveUsers] = useState(0);
-  const [usersByRole, setUsersByRole] = useState<{ role: string; count: number; label: string }[]>([]);
   const [doctorCount, setDoctorCount] = useState(0);
   const [nurseCount, setNurseCount] = useState(0);
   const [pharmacistCount, setPharmacistCount] = useState(0);
@@ -86,7 +87,6 @@ export default function DashboardPage() {
   const [trainingProgramCount, setTrainingProgramCount] = useState(0);
   const [generatedReportCount, setGeneratedReportCount] = useState(0);
 
-  // Phase 3 counts
   const [medicineCount, setMedicineCount] = useState(0);
   const [essentialMedicineCount, setEssentialMedicineCount] = useState(0);
   const [pharmaAuditCount, setPharmaAuditCount] = useState(0);
@@ -100,10 +100,12 @@ export default function DashboardPage() {
   const [reagentCount, setReagentCount] = useState(0);
   const [surveillanceCount, setSurveillanceCount] = useState(0);
 
+  const [financeStats, setFinanceStats] = useState<any>(null);
+
   const loadDashboardData = useCallback(async (silent = false) => {
     if (!silent) setIsRefreshing(true);
     try {
-      const hospitalScope = user?.role === 'hospital_admin' ? (user.hospital_id || undefined) : undefined;
+      const hospitalScope = user?.hospital_id || undefined;
       const results = await Promise.allSettled([
         getDashboardStats(hospitalScope),
         getEmployeesPerHospital(hospitalScope),
@@ -117,7 +119,7 @@ export default function DashboardPage() {
         getDocsAll('researchProjects'),
         getDocsAll('hospitalScorecards'),
       ]);
-      const [s, eph, epd, re, rt, hospitals, kpis, clinicalAudits, nursingAudits, research, scorecards] = results.map(r => r.status === 'fulfilled' ? r.value : undefined);
+      const [s, eph, epd, re, rt, hospitals, kpis, clinicalAudits, nursingAudits, research] = results.map(r => r.status === 'fulfilled' ? r.value : undefined);
       if (s) setStats(s as DashboardStats);
       if (eph) setEmpPerHospital((eph as any[]).map(h => ({ name: h.hospital_name, value: parseInt(h.employee_count) })));
       if (epd) setEmpPerDept((epd as any[]).map(d => ({ id: d.id, name: d.department_name, value: parseInt(d.employee_count) })));
@@ -144,7 +146,6 @@ export default function DashboardPage() {
       if (nursingAudits && Array.isArray(nursingAudits)) setNursingAuditCount(nursingAudits.length);
       if (research && Array.isArray(research)) setResearchCount(research.length);
 
-      // Shared data for super_admin & executive_secretary
       if (hasRole('super_admin', 'executive_secretary')) {
         const [empStats, hospStats] = await Promise.allSettled([
           Promise.allSettled([
@@ -184,7 +185,6 @@ export default function DashboardPage() {
         }
       }
 
-      // Phase 3 shared data for super_admin & executive_secretary
       if (hasRole('super_admin', 'executive_secretary')) {
         const phase3Results = await Promise.allSettled([
           getDocsAll('medicines'),
@@ -215,24 +215,21 @@ export default function DashboardPage() {
         if (Array.isArray(surv)) setSurveillanceCount(surv.length);
       }
 
-      // Super admin only data
+      if (hasRole('super_admin', 'executive_secretary', 'hospital_admin', 'hr_officer', 'director_hr')) {
+        try {
+          const scope = hasRole('super_admin', 'executive_secretary') ? undefined : hospitalScope;
+          const fs = await getFinanceDashboardStats(scope);
+          if (fs) setFinanceStats(fs);
+        } catch {}
+      }
+
       if (hasRole('super_admin')) {
         try {
           const allUsers = await getDocsAll('users');
           setTotalUsers(allUsers.length);
           setActiveUsers(allUsers.filter((u: any) => u.status === 'active').length);
           setInactiveUsers(allUsers.filter((u: any) => u.status === 'inactive').length);
-
-          const roleCounts: Record<string, number> = {};
-          allUsers.forEach((u: any) => {
-            roleCounts[u.role] = (roleCounts[u.role] || 0) + 1;
-          });
-          setUsersByRole(
-            Object.entries(roleCounts)
-              .map(([role, count]) => ({ role, count: count as number, label: (ROLE_LABELS as any)[role] || role }))
-              .sort((a, b) => b.count - a.count)
-          );
-        } catch {} // users read may be restricted by rules
+        } catch {}
       }
 
       setLastUpdated(new Date());
@@ -247,15 +244,25 @@ export default function DashboardPage() {
     return () => clearInterval(timer);
   }, []);
 
-  // Redirect director-only users to their department dashboards immediately
   useEffect(() => {
-    if (hasRole('super_admin', 'executive_secretary')) return;
+    if (hasRole('super_admin', 'executive_secretary', 'hospital_admin', 'hr_officer', 'director_hr')) {
+      loadDashboardData();
+      if (hasRole('super_admin', 'executive_secretary')) {
+        const interval = setInterval(() => loadDashboardData(true), 30000);
+        return () => clearInterval(interval);
+      }
+    }
+  }, [loadDashboardData]);
+
+  useEffect(() => {
+    if (hasRole('super_admin', 'executive_secretary', 'hospital_admin', 'hr_officer', 'director_hr')) return;
     const dirRedirect: Record<string, string> = {
       director_medical_services: '/medical-dashboard',
       director_nursing_services: '/nursing-dashboard',
       director_pharmaceutical_services: '/pharmaceutical-dashboard',
       director_laboratory_services: '/laboratory-dashboard',
       director_prs: '/prs-dashboard',
+      director_finance: '/finance-dashboard',
     };
     for (const [role, path] of Object.entries(dirRedirect)) {
       if (hasRole(role as any)) {
@@ -263,15 +270,8 @@ export default function DashboardPage() {
         return;
       }
     }
-  }, []);
-
-  useEffect(() => {
-    if (hasRole('super_admin', 'executive_secretary')) {
-      loadDashboardData();
-      const interval = setInterval(() => loadDashboardData(true), 30000);
-      return () => clearInterval(interval);
-    }
-  }, [loadDashboardData]);
+    setLoading(false);
+  }, [hasRole, navigate]);
 
   const refreshNow = () => loadDashboardData();
 
@@ -285,525 +285,280 @@ export default function DashboardPage() {
   const activeEmployees = stats?.active_employees || 0;
   const activePercent = totalEmployees > 0 ? Math.round((activeEmployees / totalEmployees) * 100) : 0;
 
-  const quickActions = [
-    { label: 'Employees', icon: Users, href: '/employees', desc: 'Manage staff records', color: 'from-[#008751] to-[#006838]', bg: 'bg-emerald-50', iconC: 'text-emerald-600' },
-    { label: 'Hospitals', icon: Building2, href: '/hospitals', desc: 'Manage facilities', color: 'from-blue-500 to-indigo-600', bg: 'bg-blue-50', iconC: 'text-blue-600' },
-    { label: 'Departments', icon: Building, href: '/departments', desc: 'Organize units', color: 'from-army-700 to-army-600', bg: 'bg-army-50', iconC: 'text-army-700' },
-    { label: 'Transfers', icon: ArrowRightLeft, href: '/transfers', desc: 'Staff movements', color: 'from-amber-500 to-orange-600', bg: 'bg-amber-50', iconC: 'text-amber-600' },
-    { label: 'Reports', icon: TrendingUp, href: '/reports', desc: 'Data & insights', color: 'from-teal-500 to-emerald-600', bg: 'bg-teal-50', iconC: 'text-teal-600' },
-    ...(hasRole('director_medical_services') ? [
-      { label: 'Clinical', icon: Stethoscope, href: '/medical-dashboard', desc: 'Clinical oversight', color: 'from-emerald-600 to-emerald-700', bg: 'bg-emerald-50', iconC: 'text-emerald-600' },
-      { label: 'Guidelines', icon: FileText, href: '/clinical-guidelines', desc: 'Clinical standards', color: 'from-teal-500 to-teal-600', bg: 'bg-teal-50', iconC: 'text-teal-600' },
-    ] : []),
-    ...(hasRole('director_nursing_services') ? [
-      { label: 'Nursing', icon: Heart, href: '/nursing-dashboard', desc: 'Nursing oversight', color: 'from-rose-500 to-rose-600', bg: 'bg-rose-50', iconC: 'text-rose-600' },
-      { label: 'Training', icon: GraduationCap, href: '/nursing-training', desc: 'CPD programs', color: 'from-violet-500 to-violet-600', bg: 'bg-violet-50', iconC: 'text-violet-600' },
-    ] : []),
-    ...(hasRole('director_prs') ? [
-      { label: 'KPIs', icon: Target, href: '/kpis', desc: 'Performance tracking', color: 'from-blue-500 to-indigo-600', bg: 'bg-blue-50', iconC: 'text-blue-600' },
-      { label: 'Scorecards', icon: Award, href: '/scorecards', desc: 'Hospital scores', color: 'from-amber-500 to-orange-600', bg: 'bg-amber-50', iconC: 'text-amber-600' },
-    ] : []),
-    { label: 'Audit Logs', icon: Activity, href: '/audit-logs', desc: 'Track changes', color: 'from-purple-500 to-violet-600', bg: 'bg-purple-50', iconC: 'text-purple-600' },
-  ];
-
-  const deptWithData = empPerDept.filter(d => d.value > 0);
-
-  const tooltipStyle = {
-    borderRadius: '12px',
-    border: '1px solid #e2e8f0',
-    boxShadow: '0 8px 30px rgba(0,0,0,0.08)',
-    padding: '10px 14px',
-    background: 'rgba(255,255,255,0.95)',
-    backdropFilter: 'blur(8px)',
-  };
+  const isSuper = hasRole('super_admin');
+  const isExecSec = hasRole('executive_secretary');
+  const isScopeMgr = !isSuper && !isExecSec;
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* ===== HERO BANNER ===== */}
-      <div className="relative overflow-hidden rounded-2xl p-6 lg:p-8 text-white"
+
+      {/* Header */}
+      <div className="relative overflow-hidden rounded-2xl p-6 lg:p-8 text-white shadow-lg"
         style={{ background: 'linear-gradient(135deg, #001a0f 0%, #022c22 30%, #064e3b 60%, #006838 100%)' }}>
-        <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-emerald-400/10 blur-[120px] pointer-events-none" />
-        <div className="absolute -bottom-24 -left-24 w-96 h-96 rounded-full bg-amber-500/5 blur-[120px] pointer-events-none" />
+        <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-emerald-400/10 blur-[100px] pointer-events-none" />
         <div className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M40 0H0v40' fill='none' stroke='%23ffffff' stroke-width='0.5'/%3E%3C/svg%3E")`,
-          }}
+          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M40 0H0v40' fill='none' stroke='%23ffffff' stroke-width='0.5'/%3E%3C/svg%3E")` }}
         />
         <div className="relative z-10">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-400/10 border border-emerald-400/20 w-fit">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping-soft" />
-                <span className="text-emerald-300 text-[11px] font-medium">All Systems Operational</span>
-              </div>
-              <div>
-                <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
-                  Welcome back, {user?.full_name?.split(' ')[0]}
-                </h1>
-                <p className="mt-1 text-emerald-100/60 text-sm max-w-xl leading-relaxed">
-                  Gombe State Digital HMIS &mdash; Unified platform for health sector leadership, management, and trust
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-white/10 backdrop-blur border border-white/10">
-                <Calendar size={15} className="text-emerald-200/80" />
-                <div className="flex flex-col items-start">
-                  <span className="text-sm text-emerald-50 font-medium tabular-nums tracking-wide">
-                    {currentTime.toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
-                  </span>
-                  <span className="text-[10px] text-emerald-200/60 leading-tight">
-                    {currentTime.toLocaleDateString('en-NG', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
-                  </span>
-                </div>
-              </div>
-              <Link
-                to="/reports"
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-sm font-medium backdrop-blur-sm transition-all duration-200 border border-white/10 group"
-              >
-                <BarChart3 size={15} />
-                <span>Reports</span>
-              </Link>
+          <div className="flex items-center gap-2 text-emerald-200/80 text-sm mb-2">
+            <BarChart3 size={14} />
+            <span>Dashboard</span>
+            <span className="text-emerald-500/50">/</span>
+            <span className="text-white font-medium">
+              {isSuper ? 'Administrator' : isExecSec ? 'Executive Secretary' : 'HR & Administration'}
+            </span>
+          </div>
+          <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
+            {isSuper ? 'Administration Dashboard' : isExecSec ? 'Executive Dashboard' : 'HR & Admin Dashboard'}
+          </h1>
+          <p className="mt-1.5 text-emerald-100/60 text-sm max-w-xl">
+            {isSuper
+              ? 'System-wide oversight, workforce analytics, and multi-departmental monitoring'
+              : isExecSec
+              ? 'Strategic overview of clinical, nursing, pharmaceutical, laboratory, and financial performance'
+              : 'Employee records, department distribution, transfers, and payroll management'}
+          </p>
+          <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10 shadow-sm w-fit mt-4">
+            <Calendar size={15} className="text-emerald-200/80" />
+            <div className="flex flex-col items-start">
+              <span className="text-sm text-emerald-50 font-medium tabular-nums tracking-wide">
+                {currentTime.toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
+              </span>
+              <span className="text-[10px] text-emerald-200/60 leading-tight">
+                {currentTime.toLocaleDateString('en-NG', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+              </span>
             </div>
           </div>
-          <div className="mt-4 text-xs text-emerald-300/50">
-            Gombe State Hospital Services Management Board &mdash; HMIS v2.0
-          </div>
-        </div>
-        <div className="absolute bottom-0 left-0 right-0 h-0.5 flex">
-          <div className="flex-1 bg-emerald-500/40" />
-          <div className="flex-1 bg-white/20" />
-          <div className="flex-1 bg-emerald-500/40" />
         </div>
       </div>
 
-      {/* ===== STATS CARDS ===== */}
-      <div className={`grid grid-cols-1 sm:grid-cols-2 ${hasRole('super_admin') ? 'lg:grid-cols-7' : 'lg:grid-cols-4'} gap-4`}>
-        <StatCard title="Total Hospitals" value={stats?.total_hospitals || 0} icon={Building2} color="primary" subtitle="Registered facilities" />
-        <StatCard title="Total Departments" value={stats?.total_departments || 0} icon={Building} color="army" subtitle="Active units" />
-        <StatCard title="Total Employees" value={totalEmployees} icon={Users} color="blue" subtitle="All staff records" />
-        <StatCard title="Active Employees" value={activeEmployees} icon={UserCheck} color="teal" subtitle={`${activePercent}% of total workforce`} />
-        {hasRole('super_admin') && (
+      {/* Stat Cards */}
+      <div className={`grid grid-cols-1 sm:grid-cols-2 ${isSuper ? 'lg:grid-cols-7' : 'lg:grid-cols-4'} gap-4`}>
+        <StatCard title="Total Hospitals" value={stats?.total_hospitals || 0} icon={Building2} color="primary" subtitle="Registered facilities" delay={0} />
+        <StatCard title="Total Departments" value={stats?.total_departments || 0} icon={Building} color="army" subtitle="Active units" delay={50} />
+        <StatCard title="Total Employees" value={totalEmployees} icon={Users} color="blue" subtitle="All staff records" delay={100} />
+        <StatCard title="Active Employees" value={activeEmployees} icon={UserCheck} color="teal" subtitle={`${activePercent}% of total workforce`} delay={150} />
+        {isSuper && (
           <>
-            <StatCard title="Total Users" value={totalUsers} icon={UserCog} color="purple" subtitle="System accounts" />
-            <StatCard title="Active Users" value={activeUsers} icon={UserCheck} color="sage" subtitle={`${totalUsers > 0 ? Math.round((activeUsers / totalUsers) * 100) : 0}% active`} />
-            <StatCard title="Inactive Users" value={inactiveUsers} icon={UserX} color="orange" subtitle="Disabled accounts" />
+            <StatCard title="Total Users" value={totalUsers} icon={UserCog} color="purple" subtitle="System accounts" delay={200} />
+            <StatCard title="Active Users" value={activeUsers} icon={UserCheck} color="sage" subtitle={`${totalUsers > 0 ? Math.round((activeUsers / totalUsers) * 100) : 0}% active`} delay={250} />
+            <StatCard title="Inactive Users" value={inactiveUsers} icon={UserX} color="orange" subtitle="Disabled accounts" delay={300} />
           </>
         )}
       </div>
 
-      {/* ===== SYSTEM HEALTH & TRUST ===== */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        <div className="lg:col-span-3 flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-200/50">
-          <Server size={18} className="text-emerald-500 flex-shrink-0" />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-emerald-800 text-sm">System Health</span>
-              <span className="tech-dot-green" />
-              <span className="text-emerald-600 text-xs">All services running</span>
-            </div>
-            <div className="flex items-center gap-3 mt-1 text-xs text-emerald-600/60">
-              <span>Database</span>
-              <span className="w-1 h-1 rounded-full bg-emerald-400" />
-              <span>Firebase</span>
-              <span className="w-1 h-1 rounded-full bg-emerald-400" />
-              <span>Auth</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 text-xs text-emerald-500 flex-shrink-0">
-            <RefreshCw size={11} className={isRefreshing ? 'animate-spin' : ''} />
-            <span>{lastUpdated ? `${secondsAgo! < 60 ? `${secondsAgo}s` : `${Math.floor(secondsAgo! / 60)}m`}` : 'Connecting...'}</span>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 justify-end lg:justify-center">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-sm">
-            <Lock size={13} className="text-emerald-500" />
-            <span className="text-xs font-semibold text-slate-700">256-bit</span>
-          </div>
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-sm">
-            <Fingerprint size={13} className="text-emerald-500" />
-            <span className="text-xs font-semibold text-slate-700">RBAC</span>
-          </div>
-        </div>
-      </div>
-
-      {/* ===== SUPER ADMIN SECTIONS ===== */}
-      {hasRole('super_admin') && (
+      {/* Super Admin */}
+      {isSuper && (
         <>
-          {/* User Statistics + Hospital/Department Summary */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Users by Role */}
-            <div className="card border-t-2 border-t-purple-400">
-              <div className="card-header">
+
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="card border-t-2 border-t-emerald-400 shadow-sm hover:shadow-md transition-shadow">
+              <div className="card-header bg-gradient-to-r from-emerald-50/50 to-transparent">
                 <h3 className="font-semibold text-slate-900 flex items-center gap-2">
-                  <Shield size={16} className="text-purple-600" />
-                  Users by Role
+                  <Building2 size={16} className="text-emerald-600" />
+                  Hospital Overview
                 </h3>
               </div>
-              <div className="p-4">
-                {usersByRole.length === 0 ? (
-                  <p className="text-sm text-slate-400 text-center py-4">No users yet.</p>
-                ) : (
-                  <div className="space-y-2.5">
-                    {usersByRole.map((r) => (
-                      <div key={r.role} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 transition-colors">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-slate-700">{r.label}</span>
-                            <span className="text-sm font-bold text-slate-900">{r.count}</span>
-                          </div>
-                          <div className="w-full h-1.5 bg-slate-100 rounded-full mt-1 overflow-hidden">
-                            <div className="h-full rounded-full bg-purple-500 transition-all duration-500"
-                              style={{ width: `${Math.min((r.count / Math.max(...usersByRole.map(x => x.count))) * 100, 100)}%` }}
-                            />
-                          </div>
-                        </div>
+              <div className="p-5 space-y-4">
+                {[
+                  { label: 'Active', value: activeHospitals, color: 'emerald', bg: 'emerald', Icon: CheckCircle },
+                  { label: 'Inactive', value: inactiveHospitals, color: 'red', bg: 'red', Icon: XCircle },
+                  { label: 'Total Registered', value: activeHospitals + inactiveHospitals, color: 'slate', bg: 'slate', Icon: Building2 },
+                ].map(item => (
+                  <div key={item.label} className={`flex items-center justify-between p-3.5 bg-gradient-to-r from-${item.bg}-50 to-${item.bg === 'slate' ? 'gray' : item.bg}-50 rounded-xl border border-${item.bg}-100`}>
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-lg bg-${item.bg}-100`}>
+                        <item.Icon size={16} className={`text-${item.color === 'slate' ? 'slate' : item.color}-600`} />
                       </div>
-                    ))}
+                      <span className={`text-sm font-semibold text-${item.color === 'slate' ? 'slate' : item.color}-800`}>{item.label}</span>
+                    </div>
+                    <span className={`text-2xl font-bold text-${item.color === 'slate' ? 'slate' : item.color}-700 tabular-nums`}>{item.value}</span>
                   </div>
-                )}
+                ))}
               </div>
             </div>
 
-            {/* Hospital + Department Summary */}
-            <div className="space-y-6">
-              {/* Hospital Overview */}
-              <div className="card border-t-2 border-t-emerald-400">
-                <div className="card-header">
+            <div className="lg:col-span-3">
+              <div className="card border-t-2 border-t-sky-400 shadow-sm hover:shadow-md transition-shadow h-full">
+                <div className="card-header bg-gradient-to-r from-sky-50/50 to-transparent">
                   <h3 className="font-semibold text-slate-900 flex items-center gap-2">
-                    <Building2 size={16} className="text-emerald-600" />
-                    Hospital Overview
+                    <BarChart3 size={18} className="text-sky-600" />
+                    <span className="text-sky-700">Employees Per Hospital</span>
                   </h3>
+                  <Link to="/employees" className="text-xs text-sky-600 hover:text-sky-700 font-medium flex items-center gap-1 transition-colors">
+                    View All <ArrowUpRight size={12} />
+                  </Link>
                 </div>
-                <div className="p-4 space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-xl">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle size={16} className="text-emerald-600" />
-                      <span className="text-sm font-medium text-emerald-800">Active</span>
+                <div className="card-body">
+                  {empPerHospital.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                      <div className="p-4 rounded-2xl bg-slate-50 mb-4">
+                        <BarChart3 size={40} className="text-slate-300" />
+                      </div>
+                      <p className="text-sm font-medium">No data available yet.</p>
+                      <p className="text-xs text-slate-300 mt-1">Employee data will appear once records are created.</p>
                     </div>
-                    <span className="text-lg font-bold text-emerald-700">{activeHospitals}</span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-red-50 rounded-xl">
-                    <div className="flex items-center gap-2">
-                      <XCircle size={16} className="text-red-500" />
-                      <span className="text-sm font-medium text-red-700">Inactive</span>
-                    </div>
-                    <span className="text-lg font-bold text-red-600">{inactiveHospitals}</span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-                    <div className="flex items-center gap-2">
-                      <Building2 size={16} className="text-slate-500" />
-                      <span className="text-sm font-medium text-slate-700">Total Registered</span>
-                    </div>
-                    <span className="text-lg font-bold text-slate-700">{activeHospitals + inactiveHospitals}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Department Summary */}
-              <div className="card border-t-2 border-t-army-400">
-                <div className="card-header">
-                  <h3 className="font-semibold text-slate-900 flex items-center gap-2">
-                    <Building size={16} className="text-army-600" />
-                    Department Summary
-                  </h3>
-                </div>
-                <div className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Building size={20} className="text-army-600" />
-                    <span className="text-sm font-medium text-slate-700">Departments Registered</span>
-                  </div>
-                  <span className="text-2xl font-bold text-army-700">{stats?.total_departments || 0}</span>
-                </div>
-                {deptWithData.length > 0 && (
-                  <div className="px-4 pb-4">
-                    <p className="text-xs text-slate-500 mb-2">Employees per Department</p>
-                    <div className="space-y-1.5">
-                      {deptWithData.slice(0, 5).map((d, i) => (
-                        <div key={d.id} className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-                          <span className="text-xs text-slate-600 flex-1 truncate">{d.name}</span>
-                          <span className="text-xs font-semibold text-slate-800">{d.value}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* ===== CHARTS + QUICK ACTIONS ===== */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Bar Chart */}
-        <div className="lg:col-span-2">
-          <div className={`card border-t-2 ${SECTION_COLORS.chart.border}`}>
-            <div className="card-header">
-              <h3 className="section-title flex items-center gap-2">
-                <BarChart3 size={18} className={SECTION_COLORS.chart.icon} />
-                <span className={SECTION_COLORS.chart.header}>Employees Per Hospital</span>
-              </h3>
-              <Link to="/employees" className={`text-xs ${SECTION_COLORS.chart.icon} hover:opacity-80 font-medium flex items-center gap-1 transition-colors`}>
-                View All <ArrowUpRight size={12} />
-              </Link>
-            </div>
-            <div className="card-body">
-              {empPerHospital.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-slate-400">
-                  <BarChart3 size={40} className="mb-3 text-slate-200" />
-                  <p className="text-sm">No data available yet.</p>
-                </div>
-              ) : (
-                <ResponsiveContainer width="100%" height={320}>
-                  <BarChart data={empPerHospital} margin={{ top: 5, right: 20, bottom: 5, left: -10 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                    <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#64748b' }} axisLine={{ stroke: '#e2e8f0' }} tickLine={false} />
-                    <YAxis tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                    <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(56,189,248,0.04)' }} />
-                    <Bar dataKey="value" radius={[8, 8, 0, 0]} maxBarSize={65}>
-                      {empPerHospital.map((_, i) => (
-                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div>
-          <div className={`card border-t-2 ${SECTION_COLORS.quick.border}`}>
-            <div className="card-header">
-              <h3 className="section-title flex items-center gap-2">
-                <Activity size={16} className={SECTION_COLORS.quick.icon} />
-                <span className={SECTION_COLORS.quick.header}>Quick Actions</span>
-              </h3>
-              <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">Launcher</span>
-            </div>
-            <div className="p-4 grid grid-cols-2 gap-2.5">
-              {quickActions.map((action, i) => (
-                <Link
-                  key={i}
-                  to={action.href}
-                  className="group flex flex-col items-center gap-2 p-3.5 rounded-xl border border-slate-100 hover:border-slate-200 bg-white hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
-                  style={{ animationDelay: `${i * 50}ms` }}
-                >
-                  <div className={`p-2.5 rounded-xl ${action.bg} transition-transform duration-200 group-hover:scale-110`}>
-                    <action.icon size={20} className={action.iconC} />
-                  </div>
-                  <div className="text-center">
-                    <span className="text-xs font-semibold text-slate-800 block">{action.label}</span>
-                    <span className="text-[10px] text-slate-400 block mt-0.5 leading-tight">{action.desc}</span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ===== BOTTOM SECTION (hidden for super_admin) ===== */}
-      {!hasRole('super_admin') && (
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Department Distribution */}
-        <div className="lg:col-span-2">
-          <div className={`card border-t-2 ${SECTION_COLORS.dept.border}`}>
-            <div className="card-header">
-              <h3 className="section-title flex items-center gap-2">
-                <Activity size={16} className={SECTION_COLORS.dept.icon} />
-                <span className={SECTION_COLORS.dept.header}>Employees Per Department</span>
-              </h3>
-            </div>
-            <div className="card-body">
-              {deptWithData.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-slate-400">
-                  <Users size={40} className="mb-3 text-slate-200" />
-                  <p className="text-sm">No employees assigned yet.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <ResponsiveContainer width="100%" height={260}>
-                      <PieChart>
-                        <Pie data={deptWithData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={95} paddingAngle={3} stroke="none">
-                          {deptWithData.map((_, i) => (
-                            <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                  ) : (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={empPerHospital} margin={{ top: 5, right: 20, bottom: 5, left: -10 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                        <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#64748b' }} axisLine={{ stroke: '#e2e8f0' }} tickLine={false} />
+                        <YAxis tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                        <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(0,135,81,0.04)' }} />
+                        <Bar dataKey="value" radius={[8, 8, 0, 0]} maxBarSize={65}>
+                          {empPerHospital.map((_, i) => (
+                            <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                           ))}
-                        </Pie>
-                        <Tooltip contentStyle={tooltipStyle} />
-                      </PieChart>
+                        </Bar>
+                      </BarChart>
                     </ResponsiveContainer>
-                  </div>
-                  <div className="flex flex-col justify-center space-y-2.5">
-                    {deptWithData.map((d, i) => (
-                      <div key={d.id} className="flex items-center gap-3">
-                        <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex justify-between text-sm">
-                            <span className="text-slate-700 font-medium truncate">{d.name}</span>
-                            <span className="text-slate-500 font-semibold ml-2">{d.value}</span>
-                          </div>
-                          <div className="w-full h-1.5 bg-slate-100 rounded-full mt-1 overflow-hidden">
-                            <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min((d.value / Math.max(...deptWithData.map(x => x.value))) * 100, 100)}%`, backgroundColor: COLORS[i % COLORS.length] }} />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Right column */}
-        <div className="space-y-6">
-          {/* Recent Employees */}
-          <div className={`card border-t-2 ${SECTION_COLORS.employees.border}`}>
-            <div className="card-header">
-              <h3 className="section-title flex items-center gap-2">
-                <UserPlus size={16} className={SECTION_COLORS.employees.icon} />
-                <span className={SECTION_COLORS.employees.header}>Recent Employees</span>
+          <div className="card border-t-2 border-t-slate-400 shadow-sm">
+            <div className="card-header bg-gradient-to-r from-slate-50/50 to-transparent">
+              <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                <Layers size={16} className="text-slate-600" />
+                System Overview
               </h3>
-              <Link to="/employees" className={`text-xs ${SECTION_COLORS.employees.icon} hover:opacity-80 font-medium transition-colors`}>View All</Link>
             </div>
-            <div className="p-0">
-              {recentEmployees.length === 0 ? (
-                <p className="text-slate-400 text-sm p-6 text-center">No employees yet.</p>
-              ) : (
-                <div className="divide-y divide-slate-100 max-h-64 overflow-y-auto">
-                  {recentEmployees.map((emp) => (
-                    <div key={emp.id} className="flex items-center justify-between px-5 py-3 hover:bg-emerald-50/30 transition-colors group">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
-                          {emp.full_name.charAt(0)}
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-slate-900">{emp.full_name}</p>
-                          <p className="text-xs text-slate-500 flex items-center gap-1.5">
-                            <span className="font-mono text-[11px]">{emp.staff_id}</span>
-                            <span className="w-1 h-1 rounded-full bg-slate-300" />
-                            {emp.department_name || 'N/A'}
-                          </p>
-                        </div>
-                      </div>
-                      <span className={`badge-${emp.status === 'active' ? 'active' : emp.status === 'suspended' ? 'suspended' : 'inactive'}`}>
-                        {emp.status}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
+            <div className="card-body">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <StatCard title="Guidelines" value={clinicalGuidelineCount} icon={FileText} color="primary" subtitle="Total" delay={0} />
+                <StatCard title="Clinical Audits" value={clinicalAuditCount} icon={Activity} color="blue" subtitle="Total" delay={30} />
+                <StatCard title="Specialists" value={specialistCount} icon={UserCog} color="purple" subtitle="Total" delay={60} />
+                <StatCard title="Nursing Audits" value={nursingAuditCount} icon={UserCheck} color="rose" subtitle="Total" delay={90} />
+                <StatCard title="Training" value={trainingProgramCount} icon={GraduationCap} color="teal" subtitle="Total" delay={120} />
+                <StatCard title="KPIs" value={kpiSummary.total} icon={Target} color="lemon" subtitle="Active" delay={150} />
+                <StatCard title="Research" value={researchCount} icon={BookOpen} color="army" subtitle="Total" delay={180} />
+                <StatCard title="Reports" value={generatedReportCount} icon={FileText} color="orange" subtitle="Total" delay={210} />
+              </div>
             </div>
           </div>
 
-          {/* Recent Transfers */}
-          <div className={`card border-t-2 ${SECTION_COLORS.transfers.border}`}>
-            <div className="card-header">
-              <h3 className="section-title flex items-center gap-2">
-                <ArrowRightLeft size={16} className={SECTION_COLORS.transfers.icon} />
-                <span className={SECTION_COLORS.transfers.header}>Recent Transfers</span>
+          <div className="card border-t-2 border-t-emerald-400 shadow-sm">
+            <div className="card-header bg-gradient-to-r from-emerald-50/50 to-transparent">
+              <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                <Pill size={16} className="text-emerald-600" />
+                Pharmaceutical & Laboratory
               </h3>
-              <Link to="/transfers" className={`text-xs ${SECTION_COLORS.transfers.icon} hover:opacity-80 font-medium transition-colors`}>View All</Link>
             </div>
-            <div className="p-0">
-              {recentTransfers.length === 0 ? (
-                <p className="text-slate-400 text-sm p-6 text-center">No transfers yet.</p>
-              ) : (
-                <div className="divide-y divide-slate-100 max-h-64 overflow-y-auto">
-                  {recentTransfers.map(t => (
-                    <div key={t.id} className="px-5 py-3 hover:bg-emerald-50/30 transition-colors group">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="text-sm font-semibold text-slate-900">{t.employee_name}</p>
-                        <span className={`badge-${t.status || 'approved'}`}>{t.status || 'approved'}</span>
-                      </div>
-                      <p className="text-xs text-slate-500 flex items-center gap-2">
-                        <span className="text-emerald-600 font-medium">{t.from_hospital}</span>
-                        <ArrowUpRight size={11} className="text-slate-400" />
-                        <span className="text-[#008751] font-medium">{t.to_hospital}</span>
-                      </p>
-                    </div>
-                  ))}
+            <div className="card-body space-y-6">
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3 flex items-center gap-2">
+                  <Pill size={12} className="text-emerald-500" /> Pharmaceutical
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <StatCard title="Medicines" value={medicineCount} icon={Pill} color="primary" subtitle="Total" delay={0} />
+                  <StatCard title="Pharm. Audits" value={pharmaAuditCount} icon={ClipboardCheck} color="blue" subtitle="Total" delay={40} />
+                  <StatCard title="Pharmacovigilance" value={pharmaVigilanceCount} icon={AlertTriangle} color="orange" subtitle="Reports" delay={80} />
+                  <StatCard title="Quality Reports" value={pharmaQualityCount} icon={Shield} color="teal" subtitle="QA reports" delay={120} />
                 </div>
-              )}
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3 flex items-center gap-2">
+                  <Microscope size={12} className="text-teal-500" /> Laboratory
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <StatCard title="Laboratories" value={laboratoryCount} icon={Microscope} color="purple" subtitle="Total" delay={0} />
+                  <StatCard title="Lab. Audits" value={labAuditCount} icon={ClipboardCheck} color="teal" subtitle="Total" delay={40} />
+                  <StatCard title="Equipment" value={equipmentCount} icon={Wrench} color="lemon" subtitle="Records" delay={80} />
+                  <StatCard title="Surveillance" value={surveillanceCount} icon={Activity} color="orange" subtitle="Reports" delay={120} />
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-      )}
 
-      {/* ===== PHASE 2 COUNTS (Super Admin - simple counts only) ===== */}
-      {hasRole('super_admin') && (
-        <>
-          <div className="section-divider pt-2">
-            <span className="text-[10px] uppercase tracking-[0.15em] text-slate-500 font-semibold">System Overview</span>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-            <StatCard title="Guidelines" value={clinicalGuidelineCount} icon={FileText} color="primary" subtitle="Total" />
-            <StatCard title="Clinical Audits" value={clinicalAuditCount} icon={Stethoscope} color="blue" subtitle="Total" />
-            <StatCard title="Specialists" value={specialistCount} icon={UserCog} color="purple" subtitle="Total" />
-            <StatCard title="Nursing Audits" value={nursingAuditCount} icon={Heart} color="purple" subtitle="Total" />
-            <StatCard title="Training" value={trainingProgramCount} icon={GraduationCap} color="teal" subtitle="Total" />
-            <StatCard title="KPIs" value={kpiSummary.total} icon={Target} color="lemon" subtitle="Active" />
-            <StatCard title="Research" value={researchCount} icon={BookOpen} color="army" subtitle="Total" />
-            <StatCard title="Reports" value={generatedReportCount} icon={FileText} color="orange" subtitle="Total" />
-          </div>
-          <div className="section-divider pt-2">
-            <span className="text-[10px] uppercase tracking-[0.15em] text-emerald-600 font-semibold">Pharmaceutical & Laboratory</span>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-            <StatCard title="Medicines" value={medicineCount} icon={Pill} color="primary" subtitle="Total" />
-            <StatCard title="Pharm. Audits" value={pharmaAuditCount} icon={ClipboardCheck} color="blue" subtitle="Total" />
-            <StatCard title="Pharmacovigilance" value={pharmaVigilanceCount} icon={AlertTriangle} color="orange" subtitle="Reports" />
-            <StatCard title="Laboratories" value={laboratoryCount} icon={Microscope} color="purple" subtitle="Total" />
-            <StatCard title="Lab. Audits" value={labAuditCount} icon={ClipboardCheck} color="teal" subtitle="Total" />
-            <StatCard title="Equipment" value={equipmentCount} icon={Wrench} color="lemon" subtitle="Records" />
-            <StatCard title="Surveillance" value={surveillanceCount} icon={Activity} color="orange" subtitle="Reports" />
-          </div>
+          {financeStats && (
+            <div className="card border-t-2 border-t-amber-400 shadow-sm">
+              <div className="card-header bg-gradient-to-r from-amber-50/50 to-transparent">
+                <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                  <DollarSign size={16} className="text-amber-600" />
+                  Financial Summary
+                </h3>
+              </div>
+              <div className="card-body">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                  <StatCard title="Total Budgets" value={financeStats.totalBudgets || 0} icon={PiggyBank} color="primary" subtitle="All budgets" delay={0} />
+                  <StatCard title="Financial Reports" value={financeStats.totalReports || 0} icon={FileText} color="blue" subtitle="Generated reports" delay={50} />
+                  <StatCard title="Revenue Records" value={financeStats.totalRevenueCount || 0} icon={TrendingUp} color="teal" subtitle="Total entries" delay={100} />
+                  <StatCard title="Payroll Reports" value={financeStats.totalPayrollCount || 0} icon={Users} color="lemon" subtitle="Total reports" delay={150} />
+                  <StatCard title="Total Assets" value={financeStats.totalAssets || 0} icon={Briefcase} color="army" subtitle="Registered assets" delay={200} />
+                  <StatCard title="Compliance Reports" value={financeStats.totalCompliance || 0} icon={FileText} color="orange" subtitle="Total reports" delay={250} />
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
 
-      {/* ===== EXECUTIVE OVERVIEW (Executive Secretary only) ===== */}
-      {hasRole('executive_secretary') && (
+      {/* Executive Secretary */}
+      {isExecSec && (
         <>
-          <div className="section-divider pt-2">
-            <span className="text-[10px] uppercase tracking-[0.15em] text-emerald-600 font-semibold">Executive Overview</span>
+
+          <div className="card border-t-2 border-t-emerald-400 shadow-sm">
+            <div className="card-header bg-gradient-to-r from-emerald-50/50 to-transparent">
+              <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                <TrendingUp size={16} className="text-emerald-600" />
+                Executive Overview
+              </h3>
+            </div>
+            <div className="card-body">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatCard title="Clinical Guidelines" value={clinicalGuidelineCount} icon={FileText} color="primary" subtitle="Published guidelines" delay={0} />
+                <StatCard title="Clinical Audits" value={clinicalAuditCount} icon={Activity} color="blue" subtitle="Active clinical audits" delay={50} />
+                <StatCard title="Specialists" value={specialistCount} icon={UserCog} color="purple" subtitle="Registered specialists" delay={100} />
+                <StatCard title="Nursing Audits" value={nursingAuditCount} icon={UserCheck} color="rose" subtitle="Active nursing audits" delay={150} />
+                <StatCard title="Training Programs" value={trainingProgramCount} icon={GraduationCap} color="teal" subtitle="CPD & training" delay={200} />
+                <StatCard title="KPIs" value={kpiSummary.total} icon={Target} color="lemon" subtitle={`${kpiSummary.rate}% achieved`} delay={250} />
+                <StatCard title="Research Projects" value={researchCount} icon={BookOpen} color="army" subtitle="Active research" delay={300} />
+                <StatCard title="Generated Reports" value={generatedReportCount} icon={FileText} color="orange" subtitle="System reports" delay={350} />
+              </div>
+            </div>
           </div>
 
-          {/* Phase 2 Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard title="Clinical Guidelines" value={clinicalGuidelineCount} icon={FileText} color="primary" subtitle="Published guidelines" />
-            <StatCard title="Clinical Audits" value={clinicalAuditCount} icon={Stethoscope} color="blue" subtitle="Active clinical audits" />
-            <StatCard title="Specialists" value={specialistCount} icon={UserCog} color="purple" subtitle="Registered specialists" />
-            <StatCard title="Nursing Audits" value={nursingAuditCount} icon={Heart} color="purple" subtitle="Active nursing audits" />
-            <StatCard title="Training Programs" value={trainingProgramCount} icon={GraduationCap} color="teal" subtitle="CPD & training" />
-            <StatCard title="KPIs" value={kpiSummary.total} icon={Target} color="lemon" subtitle={`${kpiSummary.rate}% achieved`} />
-            <StatCard title="Research Projects" value={researchCount} icon={BookOpen} color="army" subtitle="Active research" />
-            <StatCard title="Generated Reports" value={generatedReportCount} icon={FileText} color="orange" subtitle="System reports" />
+          <div className="card border-t-2 border-t-sky-400 shadow-sm">
+            <div className="card-header bg-gradient-to-r from-sky-50/50 to-transparent">
+              <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                <Users size={16} className="text-sky-600" />
+                Workforce Overview
+              </h3>
+            </div>
+            <div className="card-body">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                <StatCard title="Doctors" value={doctorCount} icon={UserCheck} color="primary" subtitle="Registered" delay={0} />
+                <StatCard title="Nurses" value={nurseCount} icon={UserPlus} color="blue" subtitle="Registered" delay={60} />
+                <StatCard title="Pharmacists" value={pharmacistCount} icon={Pill} color="purple" subtitle="Registered" delay={120} />
+                <StatCard title="Lab Personnel" value={labCount} icon={FlaskConical} color="teal" subtitle="Registered" delay={180} />
+                <StatCard title="Admin Staff" value={adminCount} icon={Users} color="army" subtitle="Registered" delay={240} />
+                <StatCard title="Total Hospitals" value={activeHospitals} icon={Building2} color="lemon" subtitle="Active" delay={300} />
+              </div>
+            </div>
           </div>
 
-          {/* Hospital Rankings + KPI Overview */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="card border-t-2 border-t-amber-400">
-              <div className="card-header">
+            <div className="card border-t-2 border-t-amber-400 shadow-sm hover:shadow-md transition-shadow">
+              <div className="card-header bg-gradient-to-r from-amber-50/50 to-transparent">
                 <h3 className="font-semibold text-slate-900 flex items-center gap-2">
                   <Building2 size={16} className="text-amber-600" />
                   Hospital Rankings (by Workforce)
                 </h3>
               </div>
-              <div className="p-4">
+              <div className="p-5">
                 {hospitalRankings.length === 0 ? (
-                  <p className="text-sm text-slate-400 text-center py-4">No data available.</p>
+                  <p className="text-sm text-slate-400 text-center py-8">No data available.</p>
                 ) : (
-                  <div className="space-y-2.5">
+                  <div className="space-y-3">
                     {hospitalRankings.map((h: any, i: number) => (
-                      <div key={h.id} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-slate-50 transition-colors">
-                        <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold text-white ${
-                          i === 0 ? 'bg-amber-500' : i === 1 ? 'bg-slate-400' : i === 2 ? 'bg-amber-700' : 'bg-slate-200 text-slate-500'
+                      <div key={h.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gradient-to-r hover:from-slate-50 hover:to-transparent transition-all duration-200">
+                        <span className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold text-white shadow-sm ${
+                          i === 0 ? 'bg-gradient-to-br from-amber-500 to-amber-600' :
+                          i === 1 ? 'bg-gradient-to-br from-slate-400 to-slate-500' :
+                          i === 2 ? 'bg-gradient-to-br from-amber-700 to-amber-800' :
+                          'bg-gradient-to-br from-slate-200 to-slate-300 text-slate-500'
                         }`}>
                           {i + 1}
                         </span>
@@ -812,7 +567,7 @@ export default function DashboardPage() {
                           <p className="text-xs text-slate-400">{h.code}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm font-semibold text-slate-700">{h.employee_count}</p>
+                          <p className="text-sm font-bold text-slate-700 tabular-nums">{h.employee_count}</p>
                           <p className="text-[10px] text-slate-400">staff</p>
                         </div>
                       </div>
@@ -822,20 +577,20 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="card border-t-2 border-t-emerald-400">
-              <div className="card-header">
+            <div className="card border-t-2 border-t-emerald-400 shadow-sm hover:shadow-md transition-shadow">
+              <div className="card-header bg-gradient-to-r from-emerald-50/50 to-transparent">
                 <h3 className="font-semibold text-slate-900 flex items-center gap-2">
                   <Target size={16} className="text-emerald-600" />
                   KPI Performance Overview
                 </h3>
               </div>
-              <div className="p-4">
+              <div className="p-5">
                 {kpiSummary.total === 0 ? (
-                  <p className="text-sm text-slate-400 text-center py-4">No KPIs configured yet.</p>
+                  <p className="text-sm text-slate-400 text-center py-8">No KPIs configured yet.</p>
                 ) : (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-center p-6">
-                      <div className="relative w-40 h-40">
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-center">
+                      <div className="relative w-44 h-44">
                         <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
                           <circle cx="60" cy="60" r="54" fill="none" stroke="#e2e8f0" strokeWidth="8" />
                           <circle cx="60" cy="60" r="54" fill="none" stroke="#008751" strokeWidth="8"
@@ -847,20 +602,20 @@ export default function DashboardPage() {
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center">
                           <div className="text-center">
-                            <p className="text-3xl font-bold text-slate-900">{kpiSummary.rate}%</p>
+                            <p className="text-4xl font-bold text-slate-900 tabular-nums">{kpiSummary.rate}%</p>
                             <p className="text-xs text-slate-400">Achievement</p>
                           </div>
                         </div>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3 text-center">
-                      <div className="p-3 bg-emerald-50 rounded-xl">
-                        <p className="text-2xl font-bold text-emerald-700">{kpiSummary.achieved}</p>
-                        <p className="text-xs text-emerald-600">Achieved</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl border border-emerald-100 text-center">
+                        <p className="text-3xl font-bold text-emerald-700 tabular-nums">{kpiSummary.achieved}</p>
+                        <p className="text-xs text-emerald-600 font-medium mt-1">Achieved</p>
                       </div>
-                      <div className="p-3 bg-slate-50 rounded-xl">
-                        <p className="text-2xl font-bold text-slate-700">{kpiSummary.total}</p>
-                        <p className="text-xs text-slate-500">Total KPIs</p>
+                      <div className="p-4 bg-gradient-to-br from-slate-50 to-gray-50 rounded-xl border border-slate-100 text-center">
+                        <p className="text-3xl font-bold text-slate-700 tabular-nums">{kpiSummary.total}</p>
+                        <p className="text-xs text-slate-500 font-medium mt-1">Total KPIs</p>
                       </div>
                     </div>
                   </div>
@@ -869,147 +624,333 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Workforce Overview */}
-          <div className="section-divider pt-2">
-            <span className="text-[10px] uppercase tracking-[0.15em] text-sky-600 font-semibold">Workforce Overview</span>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-            <StatCard title="Doctors" value={doctorCount} icon={UserCheck} color="primary" subtitle="Registered" />
-            <StatCard title="Nurses" value={nurseCount} icon={UserPlus} color="blue" subtitle="Registered" />
-            <StatCard title="Pharmacists" value={pharmacistCount} icon={Pill} color="purple" subtitle="Registered" />
-            <StatCard title="Lab Personnel" value={labCount} icon={FlaskConical} color="teal" subtitle="Registered" />
-            <StatCard title="Admin Staff" value={adminCount} icon={Users} color="army" subtitle="Registered" />
-            <StatCard title="Total Hospitals" value={activeHospitals} icon={Building2} color="lemon" subtitle="Active" />
-          </div>
-
-          {/* Services Overview - Read-only summaries */}
-          <div className="section-divider pt-2">
-            <span className="text-[10px] uppercase tracking-[0.15em] text-slate-500 font-semibold">Services Overview</span>
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="card border-t-2 border-t-blue-400">
-              <div className="card-header">
-                <h3 className="font-semibold text-slate-900 flex items-center gap-2">
-                  <Stethoscope size={16} className="text-blue-600" />
-                  Clinical Services
-                </h3>
-                <span className="text-[10px] text-slate-400">Read-only</span>
-              </div>
-              <div className="p-4 space-y-3">
-                <div className="flex justify-between items-center p-2.5 bg-blue-50 rounded-lg">
-                  <span className="text-sm text-slate-700">Clinical Guidelines</span>
-                  <span className="text-sm font-bold text-blue-700">{clinicalGuidelineCount}</span>
-                </div>
-                <div className="flex justify-between items-center p-2.5 bg-blue-50 rounded-lg">
-                  <span className="text-sm text-slate-700">Active Clinical Audits</span>
-                  <span className="text-sm font-bold text-blue-700">{clinicalAuditCount}</span>
-                </div>
-                <div className="flex justify-between items-center p-2.5 bg-blue-50 rounded-lg">
-                  <span className="text-sm text-slate-700">Registered Specialists</span>
-                  <span className="text-sm font-bold text-blue-700">{specialistCount}</span>
-                </div>
-              </div>
+          <div className="card border-t-2 border-t-slate-400 shadow-sm">
+            <div className="card-header bg-gradient-to-r from-slate-50/50 to-transparent">
+              <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                <Layers size={16} className="text-slate-600" />
+                Services Overview
+              </h3>
             </div>
-            <div className="card border-t-2 border-t-purple-400">
-              <div className="card-header">
-                <h3 className="font-semibold text-slate-900 flex items-center gap-2">
-                  <Heart size={16} className="text-purple-600" />
-                  Nursing Services
-                </h3>
-                <span className="text-[10px] text-slate-400">Read-only</span>
-              </div>
-              <div className="p-4 space-y-3">
-                <div className="flex justify-between items-center p-2.5 bg-purple-50 rounded-lg">
-                  <span className="text-sm text-slate-700">Nursing Workforce</span>
-                  <span className="text-sm font-bold text-purple-700">{nurseCount}</span>
-                </div>
-                <div className="flex justify-between items-center p-2.5 bg-purple-50 rounded-lg">
-                  <span className="text-sm text-slate-700">Active Nursing Audits</span>
-                  <span className="text-sm font-bold text-purple-700">{nursingAuditCount}</span>
-                </div>
-                <div className="flex justify-between items-center p-2.5 bg-purple-50 rounded-lg">
-                  <span className="text-sm text-slate-700">Training Programs</span>
-                  <span className="text-sm font-bold text-purple-700">{trainingProgramCount}</span>
-                </div>
-              </div>
-            </div>
-            <div className="card border-t-2 border-t-lemon-400">
-              <div className="card-header">
-                <h3 className="font-semibold text-slate-900 flex items-center gap-2">
-                  <BarChart3 size={16} className="text-amber-600" />
-                  PRS Overview
-                </h3>
-                <span className="text-[10px] text-slate-400">Read-only</span>
-              </div>
-              <div className="p-4 space-y-3">
-                <div className="flex justify-between items-center p-2.5 bg-amber-50 rounded-lg">
-                  <span className="text-sm text-slate-700">Active KPIs</span>
-                  <span className="text-sm font-bold text-amber-700">{kpiSummary.total}</span>
-                </div>
-                <div className="flex justify-between items-center p-2.5 bg-amber-50 rounded-lg">
-                  <span className="text-sm text-slate-700">Active Research</span>
-                  <span className="text-sm font-bold text-amber-700">{researchCount}</span>
-                </div>
-                <div className="flex justify-between items-center p-2.5 bg-amber-50 rounded-lg">
-                  <span className="text-sm text-slate-700">Generated Reports</span>
-                  <span className="text-sm font-bold text-amber-700">{generatedReportCount}</span>
-                </div>
+            <div className="card-body">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {[
+                  { title: 'Clinical Services', icon: Activity, color: 'blue', items: [
+                    { label: 'Clinical Guidelines', value: clinicalGuidelineCount },
+                    { label: 'Active Clinical Audits', value: clinicalAuditCount },
+                    { label: 'Registered Specialists', value: specialistCount },
+                  ]},
+                  { title: 'Nursing Services', icon: UserCheck, color: 'purple', items: [
+                    { label: 'Nursing Workforce', value: nurseCount },
+                    { label: 'Active Nursing Audits', value: nursingAuditCount },
+                    { label: 'Training Programs', value: trainingProgramCount },
+                  ]},
+                  { title: 'PRS Overview', icon: BarChart3, color: 'amber', items: [
+                    { label: 'Active KPIs', value: kpiSummary.total },
+                    { label: 'Active Research', value: researchCount },
+                    { label: 'Generated Reports', value: generatedReportCount },
+                  ]},
+                ].map(section => (
+                  <div key={section.title} className={`card border-t-2 border-t-${section.color}-400 shadow-sm`}>
+                    <div className={`card-header bg-gradient-to-r from-${section.color}-50/50 to-transparent`}>
+                      <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                        <section.icon size={16} className={`text-${section.color}-600`} />
+                        {section.title}
+                      </h3>
+                      <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">Read-only</span>
+                    </div>
+                    <div className="p-5 space-y-3">
+                      {section.items.map(item => (
+                        <div key={item.label} className={`flex justify-between items-center p-3 bg-gradient-to-r from-${section.color}-50 to-transparent rounded-xl border border-${section.color}-100/50`}>
+                          <span className="text-sm font-medium text-slate-700">{item.label}</span>
+                          <span className={`text-sm font-bold text-${section.color}-700 tabular-nums`}>{item.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
 
-          {/* Phase 3: Pharmaceutical Overview */}
-          <div className="section-divider pt-2">
-            <span className="text-[10px] uppercase tracking-[0.15em] text-emerald-600 font-semibold">Pharmaceutical Overview</span>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard title="Total Medicines" value={medicineCount} icon={Pill} color="primary" subtitle="All medicines" />
-            <StatCard title="Essential Medicines" value={essentialMedicineCount} icon={FileText} color="blue" subtitle="Essential list" />
-            <StatCard title="Pharm. Workforce" value={pharmaWorkforceCount} icon={Users} color="purple" subtitle="Workforce records" />
-            <StatCard title="Pharm. Audits" value={pharmaAuditCount} icon={ClipboardCheck} color="lemon" subtitle="Total audits" />
-            <StatCard title="Pharmacovigilance" value={pharmaVigilanceCount} icon={AlertTriangle} color="orange" subtitle="ADR reports" />
-            <StatCard title="Quality Reports" value={pharmaQualityCount} icon={Shield} color="teal" subtitle="QA reports" />
+          <div className="card border-t-2 border-t-emerald-400 shadow-sm">
+            <div className="card-header bg-gradient-to-r from-emerald-50/50 to-transparent">
+              <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                <Pill size={16} className="text-emerald-600" />
+                Pharmaceutical Overview
+              </h3>
+            </div>
+            <div className="card-body">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatCard title="Total Medicines" value={medicineCount} icon={Pill} color="primary" subtitle="All medicines" delay={0} />
+                <StatCard title="Essential Medicines" value={essentialMedicineCount} icon={FileText} color="blue" subtitle="Essential list" delay={50} />
+                <StatCard title="Pharm. Workforce" value={pharmaWorkforceCount} icon={Users} color="purple" subtitle="Workforce records" delay={100} />
+                <StatCard title="Pharm. Audits" value={pharmaAuditCount} icon={ClipboardCheck} color="lemon" subtitle="Total audits" delay={150} />
+                <StatCard title="Pharmacovigilance" value={pharmaVigilanceCount} icon={AlertTriangle} color="orange" subtitle="ADR reports" delay={200} />
+                <StatCard title="Quality Reports" value={pharmaQualityCount} icon={Shield} color="teal" subtitle="QA reports" delay={250} />
+              </div>
+            </div>
           </div>
 
-          {/* Phase 3: Laboratory Overview */}
-          <div className="section-divider pt-2">
-            <span className="text-[10px] uppercase tracking-[0.15em] text-teal-600 font-semibold">Laboratory Overview</span>
+          <div className="card border-t-2 border-t-teal-400 shadow-sm">
+            <div className="card-header bg-gradient-to-r from-teal-50/50 to-transparent">
+              <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                <Microscope size={16} className="text-teal-600" />
+                Laboratory Overview
+              </h3>
+            </div>
+            <div className="card-body">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatCard title="Laboratories" value={laboratoryCount} icon={Microscope} color="primary" subtitle="Registered labs" delay={0} />
+                <StatCard title="Lab. Workforce" value={labWorkforceCount} icon={Users} color="blue" subtitle="Workforce records" delay={50} />
+                <StatCard title="Equipment" value={equipmentCount} icon={Wrench} color="purple" subtitle="Lab equipment" delay={100} />
+                <StatCard title="Lab. Audits" value={labAuditCount} icon={ClipboardCheck} color="lemon" subtitle="Total audits" delay={150} />
+                <StatCard title="Reagents" value={reagentCount} icon={Syringe} color="teal" subtitle="Reagent records" delay={200} />
+                <StatCard title="Surveillance" value={surveillanceCount} icon={Activity} color="orange" subtitle="Disease reports" delay={250} />
+              </div>
+            </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard title="Laboratories" value={laboratoryCount} icon={Microscope} color="primary" subtitle="Registered labs" />
-            <StatCard title="Lab. Workforce" value={labWorkforceCount} icon={Users} color="blue" subtitle="Workforce records" />
-            <StatCard title="Equipment" value={equipmentCount} icon={Wrench} color="purple" subtitle="Lab equipment" />
-            <StatCard title="Lab. Audits" value={labAuditCount} icon={ClipboardCheck} color="lemon" subtitle="Total audits" />
-            <StatCard title="Reagents" value={reagentCount} icon={Syringe} color="teal" subtitle="Reagent records" />
-            <StatCard title="Surveillance" value={surveillanceCount} icon={Activity} color="orange" subtitle="Disease reports" />
+
+          {financeStats && (
+            <div className="card border-t-2 border-t-teal-400 shadow-sm">
+              <div className="card-header bg-gradient-to-r from-teal-50/50 to-transparent">
+                <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                  <DollarSign size={16} className="text-teal-600" />
+                  Financial Performance
+                </h3>
+              </div>
+              <div className="card-body">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <StatCard title="Budget Performance" value={financeStats.totalBudgets || 0} icon={PiggyBank} color="primary" subtitle={`${financeStats.budgetUtilization || 0}% utilized`} delay={0} />
+                  <StatCard title="Revenue Reports" value={financeStats.totalRevenueCount || 0} icon={TrendingUp} color="teal" subtitle={`₦${((financeStats.totalRevenue || 0) / 1000000).toFixed(1)}M total`} delay={50} />
+                  <StatCard title="Expenditure Reports" value={financeStats.totalExpenditureCount || 0} icon={TrendingDown} color="orange" subtitle={`₦${((financeStats.totalExpenditure || 0) / 1000000).toFixed(1)}M total`} delay={100} />
+                  <StatCard title="Payroll Summary" value={financeStats.totalPayrollCount || 0} icon={Users} color="lemon" subtitle={`₦${((financeStats.totalPayroll || 0) / 1000000).toFixed(1)}M total`} delay={150} />
+                  <StatCard title="Asset Reports" value={financeStats.totalAssets || 0} icon={Briefcase} color="army" subtitle={`₦${((financeStats.totalAssetValue || 0) / 1000000).toFixed(1)}M value`} delay={200} />
+                  <StatCard title="Compliance Status" value={financeStats.totalCompliance || 0} icon={FileText} color="orange" subtitle={`${financeStats.openCompliance || 0} open items`} delay={250} />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-5">
+                  <Link to="/financial-reports" className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-200 hover:border-teal-300 hover:shadow-md transition-all text-sm font-semibold text-teal-700">
+                    <FileText size={16} /> Review Financial Statements <ArrowUpRight size={14} />
+                  </Link>
+                  <Link to="/financial-analytics" className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 hover:border-amber-300 hover:shadow-md transition-all text-sm font-semibold text-amber-700">
+                    <BarChart3 size={16} /> Financial Performance Dashboard <ArrowUpRight size={14} />
+                  </Link>
+                  <Link to="/payroll-monitoring" className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-violet-50 to-purple-50 border border-violet-200 hover:border-violet-300 hover:shadow-md transition-all text-sm font-semibold text-violet-700">
+                    <Users size={16} /> Payroll Summary Reports <ArrowUpRight size={14} />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Hospital Admin / HR Officer / Director HR */}
+      {isScopeMgr && (
+        <>
+
+          <div className="card border-t-2 border-t-sky-400 shadow-sm">
+            <div className="card-header bg-gradient-to-r from-sky-50/50 to-transparent">
+              <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                <BarChart3 size={18} className="text-sky-600" />
+                <span className="text-sky-700">Employees Per Hospital</span>
+              </h3>
+              <Link to="/employees" className="text-xs text-sky-600 hover:text-sky-700 font-medium flex items-center gap-1 transition-colors">
+                View All <ArrowUpRight size={12} />
+              </Link>
+            </div>
+            <div className="card-body">
+              {empPerHospital.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                  <div className="p-4 rounded-2xl bg-slate-50 mb-4">
+                    <BarChart3 size={40} className="text-slate-300" />
+                  </div>
+                  <p className="text-sm font-medium">No data available yet.</p>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={320}>
+                  <BarChart data={empPerHospital} margin={{ top: 5, right: 20, bottom: 5, left: -10 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                    <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#64748b' }} axisLine={{ stroke: '#e2e8f0' }} tickLine={false} />
+                    <YAxis tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(0,135,81,0.04)' }} />
+                    <Bar dataKey="value" radius={[8, 8, 0, 0]} maxBarSize={65}>
+                      {empPerHospital.map((_, i) => (
+                        <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="card border-t-2 border-t-teal-400 shadow-sm">
+                <div className="card-header bg-gradient-to-r from-teal-50/50 to-transparent">
+                  <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                    <UserPlus size={16} className="text-teal-600" />
+                    <span className="text-teal-700">Recent Employees</span>
+                  </h3>
+                  <Link to="/employees" className="text-xs text-teal-600 hover:text-teal-700 font-medium transition-colors">View All</Link>
+                </div>
+                <div className="p-0">
+                  {recentEmployees.length === 0 ? (
+                    <p className="text-slate-400 text-sm py-8 text-center">No employees yet.</p>
+                  ) : (
+                    <div className="divide-y divide-slate-100 max-h-72 overflow-y-auto">
+                      {recentEmployees.map(emp => (
+                        <div key={emp.id} className="flex items-center justify-between px-5 py-3.5 hover:bg-gradient-to-r hover:from-emerald-50/50 hover:to-transparent transition-all duration-200 group">
+                          <div className="flex items-center gap-3.5">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#008751] to-[#006838] flex items-center justify-center text-white font-bold text-sm shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all">
+                              {emp.full_name.charAt(0)}
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-slate-900 group-hover:text-[#008751] transition-colors">{emp.full_name}</p>
+                              <p className="text-xs text-slate-500 flex items-center gap-1.5">
+                                <span className="font-mono text-[11px]">{emp.staff_id}</span>
+                                <span className="w-1 h-1 rounded-full bg-slate-300" />
+                                {emp.department_name || 'N/A'}
+                              </p>
+                            </div>
+                          </div>
+                          <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                            emp.status === 'active' ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20' :
+                            emp.status === 'suspended' ? 'bg-amber-50 text-amber-700 ring-1 ring-amber-600/20' :
+                            'bg-slate-50 text-slate-600 ring-1 ring-slate-400/20'
+                          }`}>{emp.status}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="card border-t-2 border-t-orange-400 shadow-sm">
+                <div className="card-header bg-gradient-to-r from-orange-50/50 to-transparent">
+                  <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                    <ArrowRightLeft size={16} className="text-orange-600" />
+                    <span className="text-orange-700">Recent Transfers</span>
+                  </h3>
+                  <Link to="/transfers" className="text-xs text-orange-600 hover:text-orange-700 font-medium transition-colors">View All</Link>
+                </div>
+                <div className="p-0">
+                  {recentTransfers.length === 0 ? (
+                    <p className="text-slate-400 text-sm py-8 text-center">No transfers yet.</p>
+                  ) : (
+                    <div className="divide-y divide-slate-100 max-h-72 overflow-y-auto">
+                      {recentTransfers.map(t => (
+                        <div key={t.id} className="px-5 py-3.5 hover:bg-gradient-to-r hover:from-orange-50/50 hover:to-transparent transition-all duration-200 group">
+                          <div className="flex items-center justify-between mb-1.5">
+                            <p className="text-sm font-semibold text-slate-900 group-hover:text-orange-700 transition-colors">{t.employee_name}</p>
+                            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                              t.status === 'approved' ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20' :
+                              t.status === 'pending' ? 'bg-amber-50 text-amber-700 ring-1 ring-amber-600/20' :
+                              'bg-red-50 text-red-700 ring-1 ring-red-600/20'
+                            }`}>{t.status || 'approved'}</span>
+                          </div>
+                          <p className="text-xs text-slate-500 flex items-center gap-2">
+                            <span className="text-emerald-700 font-medium">{t.from_hospital}</span>
+                            <ArrowUpRight size={11} className="text-slate-400" />
+                            <span className="text-[#008751] font-medium">{t.to_hospital}</span>
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {hasRole('hospital_admin') && financeStats && (
+              <div className="card border-t-2 border-t-blue-400 shadow-sm">
+                <div className="card-header bg-gradient-to-r from-blue-50/50 to-transparent">
+                  <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                    <DollarSign size={16} className="text-blue-600" />
+                    Hospital Financial Overview
+                  </h3>
+                </div>
+                <div className="card-body">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <StatCard title="Hospital Budgets" value={financeStats.totalBudgets || 0} icon={PiggyBank} color="primary" subtitle="Annual budgets" delay={0} />
+                    <StatCard title="Hospital Reports" value={financeStats.totalReports || 0} icon={FileText} color="blue" subtitle="Financial reports" delay={50} />
+                    <StatCard title="Hospital Assets" value={financeStats.totalAssets || 0} icon={Briefcase} color="army" subtitle="Registered assets" delay={100} />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+                    {[
+                      { label: 'Submit Report', href: '/financial-reports?action=submit', color: 'blue' },
+                      { label: 'Upload Documents', href: '/financial-reports?action=upload', color: 'emerald' },
+                      { label: 'Review Requests', href: '/financial-reports?action=reviews', color: 'amber' },
+                    ].map(a => (
+                      <Link key={a.label} to={a.href}
+                        className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-${a.color}-50 to-indigo-50 border border-${a.color}-200 hover:border-${a.color}-300 hover:shadow-md transition-all text-sm font-medium text-${a.color}-700">
+                        <FileText size={15} /> {a.label} <ArrowUpRight size={13} />
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {hasRole('hr_officer', 'director_hr') && financeStats && (
+              <div className="card border-t-2 border-t-violet-400 shadow-sm">
+                <div className="card-header bg-gradient-to-r from-violet-50/50 to-transparent">
+                  <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                    <Wallet size={16} className="text-violet-600" />
+                    Payroll Overview
+                  </h3>
+                </div>
+                <div className="card-body">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <StatCard title="Payroll Reports" value={financeStats.totalPayrollCount || 0} icon={Wallet} color="purple" subtitle="Total reports" delay={0} />
+                    <StatCard title="Gross Pay Total" value={Math.round((financeStats.totalPayroll || 0) / 1000000)} icon={TrendingUp} color="teal" subtitle="₦M (rounded)" delay={50} />
+                    <StatCard title="Payroll History" value={financeStats.totalPayrollHistoryCount || 0} icon={FileText} color="army" subtitle="Detailed records" delay={100} />
+                  </div>
+                  <Link to="/payroll-monitoring" className="inline-flex items-center justify-center gap-2 px-4 py-3 mt-4 rounded-xl bg-gradient-to-r from-violet-50 to-purple-50 border border-violet-200 hover:border-violet-300 hover:shadow-md transition-all text-sm font-semibold text-violet-700 w-full">
+                    <Wallet size={16} /> View Payroll Details <ArrowUpRight size={14} />
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
         </>
       )}
 
-      {/* Super Admin dashboard ends here - health status shown in top bar */}
-
-      {/* ===== TRUST & TECHNOLOGY FOOTER ===== */}
-      <div className="flex items-center justify-between flex-wrap gap-3 px-5 py-3 rounded-2xl bg-white border border-slate-200/60">
-        <div className="flex items-center gap-4 text-xs text-slate-400">
-          <span className="flex items-center gap-1.5">
-            <Lock size={12} className="text-emerald-500" />
-            SSL Encrypted
-          </span>
-          <span className="hidden sm:inline w-1 h-1 rounded-full bg-slate-300" />
-          <span className="hidden sm:flex items-center gap-1.5">
-            <Server size={12} className="text-emerald-500" />
-            Firebase
-          </span>
-          <span className="hidden sm:inline w-1 h-1 rounded-full bg-slate-300" />
-          <span className="hidden sm:flex items-center gap-1.5">
-            <Fingerprint size={12} className="text-emerald-500" />
-            RBAC
-          </span>
+      {/* Collaboration Quick Links */}
+      <div className="card">
+        <div className="card-header">
+          <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+            <Layers size={16} className="text-violet-600" />
+            Collaboration Hub
+          </h3>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="p-5">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+            <Link to="/notifications" className="flex flex-col items-center gap-2 p-3 rounded-xl bg-violet-50 hover:bg-violet-100 transition-colors">
+              <Bell size={20} className="text-violet-600" />
+              <span className="text-[10px] font-medium text-slate-600 text-center">Notifications</span>
+            </Link>
+            <Link to="/messages" className="flex flex-col items-center gap-2 p-3 rounded-xl bg-indigo-50 hover:bg-indigo-100 transition-colors">
+              <MessageSquare size={20} className="text-indigo-600" />
+              <span className="text-[10px] font-medium text-slate-600 text-center">Messages</span>
+            </Link>
+            <Link to="/tasks" className="flex flex-col items-center gap-2 p-3 rounded-xl bg-teal-50 hover:bg-teal-100 transition-colors">
+              <ListTodo size={20} className="text-teal-600" />
+              <span className="text-[10px] font-medium text-slate-600 text-center">Tasks</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="flex items-center justify-between px-1 py-2 mt-4">
+        <span className="text-[11px] text-slate-400">
+          &copy; {new Date().getFullYear()} Gombe State HMIS &mdash; All rights reserved
+        </span>
+        <div className="flex items-center gap-3">
           <span className="text-[11px] text-slate-400 tabular-nums">
             {lastUpdated
-              ? `${secondsAgo! < 60 ? `${secondsAgo}s ago` : `${Math.floor(secondsAgo! / 60)}m ago`}`
+              ? `Updated ${secondsAgo! < 60 ? `${secondsAgo}s ago` : `${Math.floor(secondsAgo! / 60)}m ago`}`
               : 'Loading...'}
           </span>
           <button
@@ -1018,7 +959,7 @@ export default function DashboardPage() {
             className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors disabled:opacity-50"
             title="Refresh now"
           >
-            <RefreshCw size={13} className={isRefreshing ? 'animate-spin text-emerald-500' : ''} />
+            <RefreshCw size={12} className={isRefreshing ? 'animate-spin text-emerald-500' : ''} />
           </button>
         </div>
       </div>

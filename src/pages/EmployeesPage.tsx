@@ -9,11 +9,12 @@ import StatCard from '../components/common/StatCard';
 import { getEmployees, createEmployee, updateEmployee, deleteEmployee, transferEmployee } from '../lib/employees';
 import { getAllHospitals } from '../lib/hospitals';
 import { getAllDepartments } from '../lib/departments';
+import { getHospitalScope } from '../lib/scope';
 
 export default function EmployeesPage() {
   const { user, hasRole } = useAuth();
-  const canManage = hasRole('super_admin', 'hospital_admin', 'hr_officer');
-  const canTransfer = hasRole('super_admin', 'hr_officer');
+  const canManage = hasRole('super_admin', 'hospital_admin', 'hr_officer', 'director_hr');
+  const canTransfer = hasRole('super_admin', 'hr_officer', 'director_hr');
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [hospitals, setHospitals] = useState<{ id: string; hospital_name: string }[]>([]);
   const [departments, setDepartments] = useState<{ id: string; department_name: string; hospital_id: string }[]>([]);
@@ -28,7 +29,7 @@ export default function EmployeesPage() {
   const [form, setForm] = useState({ staff_id: '', full_name: '', gender: '', phone_number: '', email: '', position: '', department_id: '', hospital_id: '', employment_date: '' });
   const [transferForm, setTransferForm] = useState({ to_hospital_id: '', to_department_id: '', transfer_date: '', reason: '' });
 
-  const hospitalScope = user?.role === 'hospital_admin' ? (user.hospital_id || undefined) : undefined;
+  const hospitalScope = getHospitalScope(user);
 
   const loadEmployees = async (page = 1) => {
     setLoading(true);
@@ -270,7 +271,7 @@ export default function EmployeesPage() {
                         <button onClick={() => handleToggleStatus(e)} className="btn btn-sm btn-secondary">
                           {e.status === 'active' ? 'Deactivate' : 'Activate'}
                         </button>
-                        {canManage && <button onClick={() => handleDelete(e)} className="btn btn-sm btn-danger"><Trash2 size={14} /></button>}
+                        <button onClick={() => handleDelete(e)} className="btn btn-sm btn-danger"><Trash2 size={14} /></button>
                       </div>
                     </td>
                   </tr>

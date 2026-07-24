@@ -7,10 +7,12 @@ import { Plus, Search, Pencil, Trash2, Activity, Building2, TrendingUp, Trending
 import StatCard from '../components/common/StatCard';
 import { getDiseaseSurveillanceReports, createDiseaseSurveillanceReport, updateDiseaseSurveillanceReport, deleteDiseaseSurveillanceReport } from '../lib/laboratory';
 import { getAllHospitals } from '../lib/hospitals';
+import { getHospitalScope } from '../lib/scope';
 
 export default function DiseaseSurveillancePage() {
-  const { hasRole } = useAuth();
-  const canManage = hasRole('super_admin', 'director_laboratory_services');
+  const { hasRole, user } = useAuth();
+  const canManage = hasRole('super_admin', 'lab_admin');
+  const hospitalScope = getHospitalScope(user);
   const [items, setItems] = useState<any[]>([]);
   const [hospitals, setHospitals] = useState<{ id: string; hospital_name: string }[]>([]);
   const [pagination, setPagination] = useState<PaginationType>({ page: 1, limit: 50, total: 0, totalPages: 0 });
@@ -23,7 +25,7 @@ export default function DiseaseSurveillancePage() {
   const loadData = async (page = 1) => {
     setLoading(true);
     try {
-      const { data, total } = await getDiseaseSurveillanceReports(page, 50, search || undefined);
+      const { data, total } = await getDiseaseSurveillanceReports(page, 50, search || undefined, hospitalScope);
       setItems(data);
       setPagination({ page, limit: 50, total, totalPages: Math.ceil(total / 50) });
     } finally {
@@ -37,7 +39,7 @@ export default function DiseaseSurveillancePage() {
 
   const loadHospitals = async () => {
     try {
-      const data = await getAllHospitals();
+      const data = await getAllHospitals(hospitalScope);
       setHospitals((data || []).map((h: any) => ({ id: h.id, hospital_name: h.hospital_name })));
     } catch {}
   };

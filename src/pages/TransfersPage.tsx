@@ -3,6 +3,7 @@ import { EmployeeTransfer, Pagination as PaginationType } from '../types';
 import { getTransfers, approveTransfer, rejectTransfer } from '../lib/transfers';
 import Pagination from '../components/common/Pagination';
 import { useAuth } from '../contexts/AuthContext';
+import { getHospitalScope } from '../lib/scope';
 import { ArrowRightLeft, Search, Check, X, Clock, Send, UserCheck, Ban } from 'lucide-react';
 import StatCard from '../components/common/StatCard';
 
@@ -14,14 +15,14 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function TransfersPage() {
   const { user, hasRole } = useAuth();
-  const canApprove = hasRole('super_admin', 'hr_officer');
+  const canApprove = hasRole('super_admin', 'hr_officer', 'director_hr');
   const [transfers, setTransfers] = useState<EmployeeTransfer[]>([]);
   const [pagination, setPagination] = useState<PaginationType>({ page: 1, limit: 50, total: 0, totalPages: 0 });
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [loading, setLoading] = useState(true);
 
-  const hospitalScope = user?.role === 'hospital_admin' ? (user.hospital_id || undefined) : undefined;
+  const hospitalScope = getHospitalScope(user);
 
   const loadTransfers = async (page = 1) => {
     setLoading(true);

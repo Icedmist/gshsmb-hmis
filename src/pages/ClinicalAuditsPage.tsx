@@ -10,7 +10,7 @@ import { getAllHospitals } from '../lib/hospitals';
 
 export default function ClinicalAuditsPage() {
   const { hasRole } = useAuth();
-  const canManage = hasRole('super_admin', 'director_medical_services');
+  const canManage = hasRole('super_admin', 'medical_admin');
   const [audits, setAudits] = useState<ClinicalAudit[]>([]);
   const [hospitals, setHospitals] = useState<{ id: string; hospital_name: string }[]>([]);
   const [pagination, setPagination] = useState<PaginationType>({ page: 1, limit: 50, total: 0, totalPages: 0 });

@@ -10,8 +10,9 @@ const enrichHospital = async (item: any, field: string = 'hospital_id'): Promise
 };
 
 // Laboratories
-export const getLaboratories = async (page = 1, limit = 50, search?: string): Promise<PaginationResult<any>> => {
+export const getLaboratories = async (page = 1, limit = 50, search?: string, hospitalId?: string): Promise<PaginationResult<any>> => {
   const filters: FilterConstraint[] = [];
+  if (hospitalId) filters.push({ field: 'hospital_id', op: '==', value: hospitalId });
   if (search) {
     const { data } = await getDocsPaginated('laboratories', filters, { field: 'lab_name', dir: 'asc' }, limit, page);
     const searchLower = search.toLowerCase();
@@ -51,8 +52,9 @@ export const createLaboratoryAuditFinding = async (data: any): Promise<string> =
 export const updateLaboratoryAuditFinding = async (id: string, data: any): Promise<void> => updateDocument('laboratoryAuditFindings', id, data);
 
 // Laboratory Workforce
-export const getLaboratoryWorkforce = async (page = 1, limit = 50, search?: string): Promise<PaginationResult<any>> => {
+export const getLaboratoryWorkforce = async (page = 1, limit = 50, search?: string, hospitalId?: string): Promise<PaginationResult<any>> => {
   const filters: FilterConstraint[] = [];
+  if (hospitalId) filters.push({ field: 'hospital_id', op: '==', value: hospitalId });
   if (search) {
     const { data } = await getDocsPaginated('laboratoryWorkforce', filters, { field: 'reporting_period', dir: 'desc' }, limit, page);
     return { data: await Promise.all(data.map((w: any) => enrichHospital(w))), total: data.length };
@@ -89,9 +91,10 @@ export const getAllLaboratoryEquipment = async (hospitalId?: string): Promise<an
 export const deleteLaboratoryEquipment = async (id: string): Promise<void> => deleteDocument('laboratoryEquipment', id);
 
 // Maintenance Records
-export const getEquipmentMaintenance = async (page = 1, limit = 50, search?: string, equipmentId?: string): Promise<PaginationResult<any>> => {
+export const getEquipmentMaintenance = async (page = 1, limit = 50, search?: string, equipmentId?: string, hospitalId?: string): Promise<PaginationResult<any>> => {
   const filters: FilterConstraint[] = [];
   if (equipmentId) filters.push({ field: 'equipment_id', op: '==', value: equipmentId });
+  if (hospitalId) filters.push({ field: 'hospital_id', op: '==', value: hospitalId });
   if (search) {
     const { data } = await getDocsPaginated('equipmentMaintenance', filters, { field: 'maintenance_date', dir: 'desc' }, limit, page);
     return { data: await Promise.all(data.map((m: any) => enrichHospital(m))), total: data.length };
@@ -131,8 +134,9 @@ export const getAllLaboratoryReagents = async (hospitalId?: string): Promise<any
 };
 
 // Disease Surveillance
-export const getDiseaseSurveillanceReports = async (page = 1, limit = 50, search?: string): Promise<PaginationResult<any>> => {
+export const getDiseaseSurveillanceReports = async (page = 1, limit = 50, search?: string, hospitalId?: string): Promise<PaginationResult<any>> => {
   const filters: FilterConstraint[] = [];
+  if (hospitalId) filters.push({ field: 'hospital_id', op: '==', value: hospitalId });
   if (search) {
     const { data } = await getDocsPaginated('diseaseSurveillanceReports', filters, { field: 'reporting_period', dir: 'desc' }, limit, page);
     const searchLower = search.toLowerCase();
@@ -149,8 +153,9 @@ export const deleteDiseaseSurveillanceReport = async (id: string): Promise<void>
 export const getAllDiseaseSurveillanceReports = async (): Promise<any[]> => getDocsAll('diseaseSurveillanceReports');
 
 // Laboratory Statistics
-export const getLaboratoryStatistics = async (page = 1, limit = 50, search?: string): Promise<PaginationResult<any>> => {
+export const getLaboratoryStatistics = async (page = 1, limit = 50, search?: string, hospitalId?: string): Promise<PaginationResult<any>> => {
   const filters: FilterConstraint[] = [];
+  if (hospitalId) filters.push({ field: 'hospital_id', op: '==', value: hospitalId });
   if (search) {
     const { data } = await getDocsPaginated('laboratoryStatistics', filters, { field: 'reporting_period', dir: 'desc' }, limit, page);
     return { data: await Promise.all(data.map((s: any) => enrichHospital(s))), total: data.length };
@@ -163,8 +168,9 @@ export const createLaboratoryStatistic = async (data: any): Promise<string> => a
 export const getAllLaboratoryStatistics = async (): Promise<any[]> => getDocsAll('laboratoryStatistics');
 
 // Lab Reports (generated)
-export const getLaboratoryReports = async (page = 1, limit = 50, search?: string): Promise<PaginationResult<any>> => {
+export const getLaboratoryReports = async (page = 1, limit = 50, search?: string, hospitalId?: string): Promise<PaginationResult<any>> => {
   const filters: FilterConstraint[] = [{ field: 'report_category', op: '==', value: 'laboratory' }];
+  if (hospitalId) filters.push({ field: 'hospital_id', op: '==', value: hospitalId });
   if (search) {
     const { data } = await getDocsPaginated('generatedReports', filters, { field: 'created_at', dir: 'desc' }, limit, page);
     const filtered = data.filter((r: any) => r.title?.toLowerCase().includes(search.toLowerCase()));

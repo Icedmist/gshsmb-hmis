@@ -30,8 +30,20 @@ service cloud.firestore {
       return isAdmin() || isHospitalAdmin();
     }
     
+    function isHospitalScopedRole() {
+      return isHospitalAdmin() || isPharmacyAdmin() || isLabAdmin() || isNursingAdmin() || isMedicalAdmin() || isPRSAdmin();
+    }
+
+    function isBoardLevelRole() {
+      return isAdmin() || isExecutiveSecretary() || isDirector() || isHROfficer();
+    }
+
     function isOwnHospital(resourceHospitalId) {
-      return !isHospitalAdmin() || getUserProfile().hospital_id == resourceHospitalId;
+      return !isHospitalScopedRole() || getUserProfile().hospital_id == resourceHospitalId;
+    }
+    
+    function isOwnHospitalData() {
+      return !isHospitalScopedRole() || request.resource.data.hospital_id == getUserProfile().hospital_id;
     }
     
     function isDirectorNursing() {
@@ -54,12 +66,40 @@ service cloud.firestore {
       return isAuthenticated() && getUserProfile().role == 'director_prs';
     }
     
-    function isDirector() {
-      return isDirectorNursing() || isDirectorMedical() || isDirectorPharmaceutical() || isDirectorLaboratory() || isDirectorPRS();
+    function isDirectorFinance() {
+      return isAuthenticated() && getUserProfile().role == 'director_finance';
     }
-    
+
+    function isPharmacyAdmin() {
+      return isAuthenticated() && getUserProfile().role == 'pharmacy_admin';
+    }
+
+    function isLabAdmin() {
+      return isAuthenticated() && getUserProfile().role == 'lab_admin';
+    }
+
+    function isNursingAdmin() {
+      return isAuthenticated() && getUserProfile().role == 'nursing_admin';
+    }
+
+    function isMedicalAdmin() {
+      return isAuthenticated() && getUserProfile().role == 'medical_admin';
+    }
+
+    function isPRSAdmin() {
+      return isAuthenticated() && getUserProfile().role == 'prs_admin';
+    }
+
+    function isDirectorHR() {
+      return isAuthenticated() && getUserProfile().role == 'director_hr';
+    }
+
+    function isDirector() {
+      return isDirectorNursing() || isDirectorMedical() || isDirectorPharmaceutical() || isDirectorLaboratory() || isDirectorPRS() || isDirectorFinance() || isDirectorHR();
+    }
+
     function canManageContent() {
-      return isAdmin() || isExecutiveSecretary() || isHospitalAdmin() || isHROfficer() || isDirector();
+      return isAdmin() || isExecutiveSecretary() || isHospitalAdmin() || isHROfficer() || isDirector() || isPharmacyAdmin() || isLabAdmin() || isNursingAdmin() || isMedicalAdmin() || isPRSAdmin();
     }
     
     function isOwnUser(resourceId) {
@@ -176,8 +216,57 @@ service cloud.firestore {
     // (medical, pharmaceutical, laboratory, PRS, and any future collections)
     match /{collection}/{docId} {
       allow read: if isAuthenticated();
-      allow create, update: if canManageContent();
+      allow create: if canManageContent() && isOwnHospitalData();
+      allow update: if canManageContent() && isOwnHospitalData();
       allow delete: if isAdmin();
+    }
+
+    // --- Collaboration collections ---
+
+    // Notifications: users read/write their own
+    match /notifications/{docId} {
+      allow read: if isAuthenticated() && request.auth.uid == resource.data.user_id;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && request.auth.uid == resource.data.user_id;
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.user_id;
+    }
+
+    // Message threads: participants can read/write
+    match /message_threads/{docId} {
+      allow read: if isAuthenticated() && resource.data.participants.hasAny([request.auth.uid]);
+      allow create: if isAuthenticated() && request.resource.data.participants.hasAny([request.auth.uid]);
+      allow update: if isAuthenticated() && resource.data.participants.hasAny([request.auth.uid]);
+      allow delete: if isAdmin();
+    }
+
+    // Messages: participants of the parent thread can read/write
+    match /messages/{docId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
+    // Tasks: all authenticated can read, admin/ES can create/update/delete
+    match /tasks/{docId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() || isExecutiveSecretary();
+      allow update: if isAuthenticated();
+      allow delete: if isAdmin() || isExecutiveSecretary();
+    }
+
+    // Task comments: all authenticated can read/write
+    match /task_comments/{docId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
+    // Notification settings
+    match /notification_settings/{docId} {
+      allow read: if isAuthenticated() && request.auth.uid == resource.data.user_id;
+      allow write: if isAuthenticated() && request.auth.uid == resource.data.user_id;
     }
   }
 }

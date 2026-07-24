@@ -1,4 +1,4 @@
-export type UserRole = 'super_admin' | 'executive_secretary' | 'hospital_admin' | 'hr_officer' | 'director_medical_services' | 'director_nursing_services' | 'director_prs' | 'director_pharmaceutical_services' | 'director_laboratory_services';
+export type UserRole = 'super_admin' | 'executive_secretary' | 'hospital_admin' | 'hr_officer' | 'director_hr' | 'director_medical_services' | 'director_nursing_services' | 'director_prs' | 'director_pharmaceutical_services' | 'director_laboratory_services' | 'director_finance' | 'lab_admin' | 'pharmacy_admin' | 'nursing_admin' | 'medical_admin' | 'prs_admin';
 export type EntityStatus = 'active' | 'inactive' | 'suspended';
 export type EmployeeStatus = 'active' | 'inactive' | 'suspended';
 export type TransferStatus = 'pending' | 'approved' | 'rejected';
@@ -638,16 +638,577 @@ export interface LaboratoryStatistic {
   updated_at: any;
 }
 
+// --- Phase 4: Finance and Accounts ---
+export interface Budget {
+  id: string;
+  budget_year: number;
+  hospital_id?: string;
+  hospital_name?: string;
+  department_id?: string;
+  department_name?: string;
+  category: string;
+  approved_amount: number;
+  actual_amount: number;
+  variance: number;
+  status: EntityStatus;
+  notes?: string;
+  created_by?: string;
+  created_at: any;
+  updated_at: any;
+}
+
+export interface BudgetItem {
+  id: string;
+  budget_id: string;
+  description: string;
+  line_item: string;
+  approved_amount: number;
+  actual_amount: number;
+  variance: number;
+  status: EntityStatus;
+  created_at: any;
+  updated_at: any;
+}
+
+export interface FinancialReport {
+  id: string;
+  title: string;
+  type: 'monthly' | 'quarterly' | 'annual' | 'adhoc';
+  report_category: string;
+  hospital_id?: string;
+  hospital_name?: string;
+  department_id?: string;
+  department_name?: string;
+  period: string;
+  content: string;
+  total_revenue?: number;
+  total_expenditure?: number;
+  net_position?: number;
+  format: 'pdf' | 'excel';
+  url?: string;
+  status: EntityStatus;
+  created_by?: string;
+  created_at: any;
+  updated_at: any;
+}
+
+export interface RevenueRecord {
+  id: string;
+  hospital_id: string;
+  hospital_name?: string;
+  source: string;
+  amount: number;
+  revenue_date: string;
+  description: string;
+  reference_number: string;
+  status: EntityStatus;
+  created_by?: string;
+  created_at: any;
+  updated_at: any;
+}
+
+export interface ExpenditureRecord {
+  id: string;
+  hospital_id: string;
+  hospital_name?: string;
+  department_id?: string;
+  department_name?: string;
+  category: string;
+  amount: number;
+  expenditure_date: string;
+  description: string;
+  payment_reference: string;
+  payee: string;
+  status: EntityStatus;
+  created_by?: string;
+  created_at: any;
+  updated_at: any;
+}
+
+export interface PayrollReport {
+  id: string;
+  hospital_id: string;
+  hospital_name?: string;
+  period: string;
+  total_employees: number;
+  gross_pay: number;
+  deductions: number;
+  net_pay: number;
+  status: EntityStatus;
+  processed_by?: string;
+  created_at: any;
+  updated_at: any;
+}
+
+export interface PayrollHistory {
+  id: string;
+  payroll_id: string;
+  employee_id: string;
+  employee_name?: string;
+  staff_id?: string;
+  basic_salary: number;
+  allowances: number;
+  deductions: number;
+  net_pay: number;
+  payment_date: string;
+  status: EntityStatus;
+  created_at: any;
+}
+
+export interface TreasuryRecord {
+  id: string;
+  hospital_id?: string;
+  hospital_name?: string;
+  transaction_type: 'inflow' | 'outflow' | 'transfer';
+  amount: number;
+  source: string;
+  description: string;
+  transaction_date: string;
+  balance_after: number;
+  reference_number: string;
+  status: EntityStatus;
+  created_by?: string;
+  created_at: any;
+  updated_at: any;
+}
+
+export interface Asset {
+  id: string;
+  asset_name: string;
+  category_id: string;
+  category_name?: string;
+  hospital_id: string;
+  hospital_name?: string;
+  department_id?: string;
+  department_name?: string;
+  description: string;
+  serial_number: string;
+  purchase_date: string;
+  purchase_cost: number;
+  current_value: number;
+  location: string;
+  assigned_to?: string;
+  status: 'operational' | 'under_maintenance' | 'faulty' | 'decommissioned';
+  created_by?: string;
+  created_at: any;
+  updated_at: any;
+}
+
+export interface AssetCategory {
+  id: string;
+  name: string;
+  description: string;
+  depreciation_rate: number;
+  status: EntityStatus;
+  created_at: any;
+  updated_at: any;
+}
+
+export interface AssetAssignment {
+  id: string;
+  asset_id: string;
+  asset_name?: string;
+  assigned_to: string;
+  assigned_to_name?: string;
+  department_id?: string;
+  department_name?: string;
+  assignment_date: string;
+  return_date?: string;
+  status: EntityStatus;
+  created_at: any;
+  updated_at: any;
+}
+
+export interface AssetMaintenance {
+  id: string;
+  asset_id: string;
+  asset_name?: string;
+  hospital_id: string;
+  hospital_name?: string;
+  maintenance_type: 'routine' | 'repair' | 'calibration';
+  description: string;
+  maintenance_date: string;
+  cost: number;
+  performed_by: string;
+  next_maintenance_date?: string;
+  status: EntityStatus;
+  created_at: any;
+  updated_at: any;
+}
+
+export interface ComplianceReport {
+  id: string;
+  title: string;
+  report_type: 'internal_control' | 'audit_recommendation' | 'compliance_status';
+  hospital_id?: string;
+  hospital_name?: string;
+  department_id?: string;
+  department_name?: string;
+  period: string;
+  findings: string;
+  recommendations: string;
+  status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  resolved_date?: string;
+  created_by?: string;
+  created_at: any;
+  updated_at: any;
+}
+
+export interface FinancialAnalytic {
+  id: string;
+  analytic_type: 'budget_trend' | 'revenue_trend' | 'expenditure_trend' | 'financial_summary';
+  hospital_id?: string;
+  hospital_name?: string;
+  period: string;
+  metrics: Record<string, number>;
+  summary: string;
+  created_at: any;
+  updated_at: any;
+}
+
+export interface FinancialDocument {
+  id: string;
+  report_id?: string;
+  hospital_id: string;
+  hospital_name?: string;
+  document_name: string;
+  document_url: string;
+  document_type: string;
+  notes: string;
+  uploaded_by: string;
+  created_at: any;
+  updated_at: any;
+}
+
+export interface FinancialReview {
+  id: string;
+  report_id?: string;
+  hospital_id: string;
+  hospital_name?: string;
+  report_title?: string;
+  request: string;
+  response?: string;
+  status: 'pending' | 'responded' | 'resolved';
+  requested_by: string;
+  requested_by_name?: string;
+  responded_at?: any;
+  created_at: any;
+  updated_at: any;
+}
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  type: 'report_submitted' | 'report_approved' | 'report_rejected' | 'task_assigned' | 'task_completed' | 'deadline_approaching' | 'document_uploaded' | 'circular_published' | 'workflow_update' | 'approval_request' | 'message_received' | 'announcement';
+  title: string;
+  message: string;
+  link?: string;
+  read: boolean;
+  related_entity_type?: string;
+  related_entity_id?: string;
+  created_at: any;
+}
+
+export interface NotificationSetting {
+  id: string;
+  user_id: string;
+  email_notifications: boolean;
+  in_app_notifications: boolean;
+  types: Record<string, boolean>;
+  updated_at: any;
+}
+
+export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'overdue';
+export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
+
+export interface Task {
+  id: string;
+  title: string;
+  description: string;
+  assigned_to: string;
+  assigned_to_name?: string;
+  assigned_by: string;
+  assigned_by_name?: string;
+  hospital_id?: string;
+  department_id?: string;
+  department_name?: string;
+  priority: TaskPriority;
+  status: TaskStatus;
+  due_date: any;
+  completed_at?: any;
+  related_entity_type?: string;
+  related_entity_id?: string;
+  created_at: any;
+  updated_at: any;
+}
+
+export interface TaskComment {
+  id: string;
+  task_id: string;
+  user_id: string;
+  user_name?: string;
+  comment: string;
+  created_at: any;
+}
+
+export type DocumentStatus = 'draft' | 'published' | 'archived';
+export type DocumentType = 'circular' | 'policy' | 'guideline' | 'sop' | 'report' | 'meeting_minutes' | 'audit_report' | 'financial_report' | 'research';
+
+export interface DocumentCategory {
+  id: string;
+  name: string;
+  description?: string;
+  color?: string;
+  created_at: any;
+}
+
+export interface Document {
+  id: string;
+  title: string;
+  description?: string;
+  category_id?: string;
+  category_name?: string;
+  document_type: DocumentType;
+  file_url: string;
+  file_name: string;
+  file_size?: number;
+  file_type?: string;
+  version: number;
+  status: DocumentStatus;
+  hospital_id?: string;
+  hospital_name?: string;
+  department_id?: string;
+  department_name?: string;
+  uploaded_by: string;
+  uploaded_by_name?: string;
+  approved_by?: string;
+  approved_at?: any;
+  tags?: string[];
+  created_at: any;
+  updated_at: any;
+}
+
+export interface DocumentVersion {
+  id: string;
+  document_id: string;
+  version: number;
+  file_url: string;
+  file_name: string;
+  file_size?: number;
+  uploaded_by: string;
+  uploaded_by_name?: string;
+  change_notes?: string;
+  created_at: any;
+}
+
+export type WorkflowStatus = 'draft' | 'active' | 'completed' | 'cancelled';
+export type StepStatus = 'pending' | 'in_progress' | 'approved' | 'rejected' | 'returned';
+
+export interface Workflow {
+  id: string;
+  name: string;
+  description?: string;
+  entity_type: string;
+  entity_id: string;
+  initiator_id: string;
+  initiator_name?: string;
+  hospital_id?: string;
+  hospital_name?: string;
+  status: WorkflowStatus;
+  current_step: number;
+  total_steps: number;
+  current_reviewer?: string;
+  current_reviewer_name?: string;
+  next_approver?: string;
+  next_approver_name?: string;
+  started_at: any;
+  completed_at?: any;
+  created_at: any;
+  updated_at: any;
+}
+
+export interface WorkflowStep {
+  id: string;
+  workflow_id: string;
+  step_number: number;
+  name: string;
+  assignee_role?: string;
+  assignee_id?: string;
+  assignee_name?: string;
+  status: StepStatus;
+  comment?: string;
+  time_spent?: number;
+  assigned_at: any;
+  completed_at?: any;
+  created_at: any;
+}
+
+export interface WorkflowHistory {
+  id: string;
+  workflow_id: string;
+  step_number: number;
+  action: 'submitted' | 'approved' | 'rejected' | 'returned' | 'cancelled' | 'commented';
+  user_id: string;
+  user_name?: string;
+  comment?: string;
+  previous_status?: string;
+  new_status?: string;
+  created_at: any;
+}
+
+export interface Approval {
+  id: string;
+  entity_type: 'report' | 'document' | 'workflow' | 'budget' | 'audit' | 'transfer';
+  entity_id: string;
+  entity_title?: string;
+  requester_id: string;
+  requester_name?: string;
+  reviewer_id: string;
+  reviewer_name?: string;
+  hospital_id?: string;
+  hospital_name?: string;
+  status: 'pending' | 'approved' | 'rejected' | 'returned';
+  priority: TaskPriority;
+  due_date?: any;
+  submitted_at: any;
+  decided_at?: any;
+  created_at: any;
+  updated_at: any;
+}
+
+export interface ApprovalComment {
+  id: string;
+  approval_id: string;
+  user_id: string;
+  user_name?: string;
+  comment: string;
+  decision?: 'approved' | 'rejected' | 'returned';
+  created_at: any;
+}
+
+export interface Message {
+  id: string;
+  thread_id: string;
+  sender_id: string;
+  sender_name?: string;
+  content: string;
+  attachments?: { name: string; url: string }[];
+  read_by: string[];
+  created_at: any;
+}
+
+export interface MessageThread {
+  id: string;
+  subject: string;
+  participants: string[];
+  participant_names?: string[];
+  hospital_id?: string;
+  department_id?: string;
+  is_broadcast: boolean;
+  last_message?: string;
+  last_message_at?: any;
+  last_message_by?: string;
+  created_at: any;
+  updated_at: any;
+}
+
+export interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  priority: 'low' | 'normal' | 'high' | 'urgent';
+  target_roles?: string[];
+  target_hospitals?: string[];
+  created_by: string;
+  created_by_name?: string;
+  expires_at?: any;
+  pinned: boolean;
+  created_at: any;
+  updated_at: any;
+}
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  description?: string;
+  event_type: 'audit' | 'meeting' | 'training' | 'deadline' | 'board_event' | 'hospital_event' | 'inspection' | 'other';
+  start_date: any;
+  end_date?: any;
+  all_day: boolean;
+  location?: string;
+  hospital_id?: string;
+  hospital_name?: string;
+  organizer_id: string;
+  organizer_name?: string;
+  participants?: string[];
+  participant_names?: string[];
+  color?: string;
+  created_at: any;
+  updated_at: any;
+}
+
+export interface OrganizationActivity {
+  id: string;
+  user_id: string;
+  user_name?: string;
+  user_role?: string;
+  hospital_id?: string;
+  hospital_name?: string;
+  department_id?: string;
+  department_name?: string;
+  action: string;
+  entity_type: string;
+  entity_id?: string;
+  entity_title?: string;
+  details?: string;
+  previous_status?: string;
+  new_status?: string;
+  created_at: any;
+}
+
+export interface SearchResult {
+  id: string;
+  entity_type: string;
+  title: string;
+  subtitle?: string;
+  description?: string;
+  url: string;
+  icon?: string;
+  hospital_name?: string;
+  status?: string;
+  created_at?: any;
+}
+
+export interface SearchIndex {
+  id: string;
+  entity_type: string;
+  entity_id: string;
+  title: string;
+  content: string;
+  tags: string[];
+  hospital_id?: string;
+  department_id?: string;
+  created_at: any;
+  updated_at: any;
+}
+
 export const ROLE_LABELS: Record<UserRole, string> = {
   super_admin: 'Super Admin',
   executive_secretary: 'Executive Secretary',
   hospital_admin: 'Hospital Admin',
   hr_officer: 'HR Officer',
+  director_hr: 'Director HR',
   director_medical_services: 'Director Medical Services',
   director_nursing_services: 'Director Nursing Services',
   director_prs: 'Director PRS',
   director_pharmaceutical_services: 'Director Pharmaceutical Services',
   director_laboratory_services: 'Director Medical Laboratory Services',
+  director_finance: 'Director Finance and Accounts',
+  lab_admin: 'Lab Admin',
+  pharmacy_admin: 'Pharmacy Admin',
+  nursing_admin: 'Nursing Admin',
+  medical_admin: 'Medical Admin',
+  prs_admin: 'PRS Admin',
 };
 
 export const ROLE_OPTIONS = [
@@ -655,9 +1216,132 @@ export const ROLE_OPTIONS = [
   { value: 'executive_secretary', label: 'Executive Secretary' },
   { value: 'hospital_admin', label: 'Hospital Admin' },
   { value: 'hr_officer', label: 'HR Officer' },
+  { value: 'director_hr', label: 'Director HR' },
   { value: 'director_medical_services', label: 'Director Medical Services' },
   { value: 'director_nursing_services', label: 'Director Nursing Services' },
   { value: 'director_prs', label: 'Director PRS' },
   { value: 'director_pharmaceutical_services', label: 'Director Pharmaceutical Services' },
   { value: 'director_laboratory_services', label: 'Director Medical Laboratory Services' },
+  { value: 'director_finance', label: 'Director Finance and Accounts' },
+  { value: 'lab_admin', label: 'Lab Admin' },
+  { value: 'pharmacy_admin', label: 'Pharmacy Admin' },
+  { value: 'nursing_admin', label: 'Nursing Admin' },
+  { value: 'medical_admin', label: 'Medical Admin' },
+  { value: 'prs_admin', label: 'PRS Admin' },
 ];
+
+// --- Locum Management ---
+export type LocumRequestStatus = 'pending_hospital_admin' | 'pending_destination_admin' | 'pending_hr' | 'approved' | 'rejected' | 'cancelled';
+export type StaffingRequestStatus = 'open' | 'in_progress' | 'filled' | 'closed';
+export type LocumAssignmentStatus = 'active' | 'completed' | 'expired';
+export type NominationStatus = 'pending' | 'approved' | 'rejected';
+
+export interface LocumRequest {
+  id: string;
+  employee_id: string;
+  employee_name: string;
+  staff_id: string;
+  source_hospital_id: string;
+  source_hospital_name: string;
+  destination_hospital_id: string;
+  destination_hospital_name: string;
+  department: string;
+  position: string;
+  reason: string;
+  start_date: string;
+  end_date: string;
+  duration_days: number;
+  supporting_docs?: string;
+  status: LocumRequestStatus;
+  current_step: string;
+  created_by: string;
+  created_at: any;
+  updated_at: any;
+}
+
+export interface StaffingRequest {
+  id: string;
+  hospital_id: string;
+  hospital_name: string;
+  profession: string;
+  specialty: string;
+  staff_needed: number;
+  department: string;
+  reason: string;
+  duration_days: number;
+  priority: 'low' | 'normal' | 'high' | 'urgent';
+  start_date: string;
+  end_date: string;
+  status: StaffingRequestStatus;
+  created_by: string;
+  created_at: any;
+  updated_at: any;
+}
+
+export interface StaffNomination {
+  id: string;
+  staffing_request_id: string;
+  employee_id: string;
+  employee_name: string;
+  staff_id: string;
+  source_hospital_id: string;
+  source_hospital_name: string;
+  nominated_by: string;
+  nominated_by_name: string;
+  status: NominationStatus;
+  created_at: any;
+  updated_at: any;
+}
+
+export interface LocumAssignment {
+  id: string;
+  locum_request_id?: string;
+  staffing_request_id?: string;
+  employee_id: string;
+  employee_name: string;
+  staff_id: string;
+  source_hospital_id: string;
+  source_hospital_name: string;
+  destination_hospital_id: string;
+  destination_hospital_name: string;
+  department: string;
+  position: string;
+  start_date: string;
+  end_date: string;
+  duration_days: number;
+  status: LocumAssignmentStatus;
+  created_by: string;
+  created_at: any;
+  completed_at?: any;
+}
+
+export interface LocumApproval {
+  id: string;
+  locum_request_id?: string;
+  staffing_request_id?: string;
+  step: string;
+  approver_id: string;
+  approver_name: string;
+  action: 'approved' | 'rejected';
+  comment?: string;
+  created_at: any;
+}
+
+export interface LocumHistory {
+  id: string;
+  locum_request_id: string;
+  employee_id: string;
+  employee_name: string;
+  staff_id: string;
+  source_hospital_id: string;
+  source_hospital_name: string;
+  destination_hospital_id: string;
+  destination_hospital_name: string;
+  department: string;
+  position: string;
+  start_date: string;
+  end_date: string;
+  duration_days: number;
+  status: string;
+  completed_at: any;
+}

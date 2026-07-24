@@ -1,8 +1,10 @@
-import { Menu, LogOut, KeyRound, Shield, ChevronDown, User } from 'lucide-react';
+import { Menu, LogOut, KeyRound, Shield, ChevronDown, User, Building2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import ChangePasswordModal from '../common/ChangePasswordModal';
+import { getDocById } from '../../lib/firestore';
+import { getHospitalScope } from '../../lib/scope';
 
 interface TopNavProps {
   onMenuClick: () => void;
@@ -12,7 +14,19 @@ export default function TopNav({ onMenuClick }: TopNavProps) {
   const { user, logout } = useAuth();
   const [showMenu, setShowMenu] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
+  const [hospitalName, setHospitalName] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const hospitalScope = getHospitalScope(user);
+
+  useEffect(() => {
+    if (hospitalScope) {
+      getDocById('hospitals', hospitalScope).then(doc => {
+        if (doc?.hospital_name) setHospitalName(doc.hospital_name);
+      });
+    } else {
+      setHospitalName(null);
+    }
+  }, [hospitalScope]);
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -46,6 +60,14 @@ export default function TopNav({ onMenuClick }: TopNavProps) {
             <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider">
               {user?.role?.replace(/_/g, ' ')}
             </span>
+            {hospitalName && (
+              <>
+                <div className="w-px h-4 bg-slate-200 mx-1" />
+                <span className="text-xs text-slate-500 flex items-center gap-1">
+                  <Building2 size={12} /> {hospitalName}
+                </span>
+              </>
+            )}
             <div className="w-px h-4 bg-slate-200 mx-1" />
             <span className="text-xs text-slate-400 tabular-nums">
               {new Date().toLocaleDateString('en-NG', { weekday: 'short', month: 'short', day: 'numeric' })}
@@ -69,7 +91,10 @@ export default function TopNav({ onMenuClick }: TopNavProps) {
             >
               <div className="hidden sm:block text-right">
                 <p className="text-sm font-semibold text-slate-900 leading-tight">{user?.full_name}</p>
-                <p className="text-[11px] text-slate-500 capitalize">{user?.role?.replace(/_/g, ' ')}</p>
+                <p className="text-[11px] text-slate-500 capitalize">
+                  {user?.role?.replace(/_/g, ' ')}
+                  {hospitalName && <span className="text-emerald-600 ml-1">· {hospitalName}</span>}
+                </p>
               </div>
               <div className="w-9 h-9 rounded-xl overflow-hidden shadow-sm ring-2 ring-emerald-100 relative bg-gradient-to-br from-emerald-600 to-emerald-800">
                 {user?.avatar_url ? (
@@ -85,23 +110,28 @@ export default function TopNav({ onMenuClick }: TopNavProps) {
 
             {showMenu && (
               <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl shadow-slate-900/10 border border-slate-200 z-50 py-1.5 overflow-hidden animate-scale-in">
-                <div className="px-4 py-4 border-b border-slate-100">
-                  <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-xl overflow-hidden ring-2 ring-emerald-200/60 shadow-sm relative bg-gradient-to-br from-emerald-600 to-emerald-800">
-                      {user?.avatar_url ? (
-                        <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <span className="text-white font-bold text-base">{user?.full_name?.charAt(0) || 'U'}</span>
+                    <div className="px-4 py-4 border-b border-slate-100">
+                      <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-xl overflow-hidden ring-2 ring-emerald-200/60 shadow-sm relative bg-gradient-to-br from-emerald-600 to-emerald-800">
+                          {user?.avatar_url ? (
+                            <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <span className="text-white font-bold text-base">{user?.full_name?.charAt(0) || 'U'}</span>
+                            </div>
+                          )}
                         </div>
-                      )}
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900">{user?.full_name}</p>
+                          <p className="text-xs text-slate-400">{user?.email}</p>
+                          {hospitalName && (
+                            <p className="text-xs text-emerald-600 font-medium mt-0.5 flex items-center gap-1">
+                              <Building2 size={10} /> {hospitalName}
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900">{user?.full_name}</p>
-                      <p className="text-xs text-slate-400">{user?.email}</p>
-                    </div>
-                  </div>
-                </div>
                 <div className="px-2 py-1">
                   <Link
                     to="/settings"

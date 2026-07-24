@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { getDepartments, createDepartment, updateDepartment, deleteDepartment } from '../lib/departments';
 import { getAllHospitals } from '../lib/hospitals';
 import { Department } from '../types';
+import { getHospitalScope } from '../lib/scope';
 import Modal from '../components/common/Modal';
 import Pagination from '../components/common/Pagination';
 import { useAuth } from '../contexts/AuthContext';
@@ -22,7 +23,7 @@ export default function DepartmentsPage() {
   const [manageDept, setManageDept] = useState<Department[] | null>(null);
   const [expandedName, setExpandedName] = useState<string | null>(null);
 
-  const hospitalScope = user?.role === 'hospital_admin' ? (user.hospital_id || undefined) : undefined;
+  const hospitalScope = getHospitalScope(user);
 
   const loadDepartments = async (page = 1) => {
     setLoading(true);
@@ -51,7 +52,7 @@ export default function DepartmentsPage() {
 
   const loadHospitals = async () => {
     try {
-      const data = await getAllHospitals();
+      const data = await getAllHospitals(hospitalScope);
       setHospitals((data || []).map((h: any) => ({ id: h.id, hospital_name: h.hospital_name, hospital_code: h.hospital_code })));
     } catch {}
   };
@@ -207,7 +208,7 @@ export default function DepartmentsPage() {
                   <th>Code</th>
                   <th>Hospitals</th>
                   <th>Status</th>
-                  {canManage && <th className="text-right">Actions</th>}
+                  <th className="text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -261,7 +262,6 @@ export default function DepartmentsPage() {
                             <span className={status === 'active' ? 'badge-active' : 'badge-inactive'}>{status}</span>
                           )}
                         </td>
-                        {canManage && (
                           <td>
                             <div className="flex items-center justify-end gap-2">
                               <button type="button" onClick={(e) => { e.stopPropagation(); setManageDept(items); }} className="btn btn-sm btn-secondary">
@@ -269,7 +269,6 @@ export default function DepartmentsPage() {
                               </button>
                             </div>
                           </td>
-                        )}
                       </tr>
                       {isExpanded && (
                         <tr key={`${name}-expanded`}>
@@ -297,7 +296,6 @@ export default function DepartmentsPage() {
                                     <td>
                                       <span className={d.status === 'active' ? 'badge-active' : 'badge-inactive'}>{d.status}</span>
                                     </td>
-                                    {canManage && (
                                       <td className="text-right">
                                         <div className="flex items-center justify-end gap-1">
                                           <button onClick={() => openEdit(d)} className="btn btn-xs btn-secondary p-1.5"><Pencil size={13} /></button>
@@ -307,7 +305,6 @@ export default function DepartmentsPage() {
                                           <button onClick={() => handleDelete(d)} className="btn btn-xs btn-danger p-1.5"><Trash2 size={13} /></button>
                                         </div>
                                       </td>
-                                    )}
                                   </tr>
                                 ))}
                               </tbody>

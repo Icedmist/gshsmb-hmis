@@ -1,12 +1,17 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getDocsAll } from '../lib/firestore';
+import { getDocsAll, type FilterConstraint } from '../lib/firestore';
 import { getNursingWorkforceSummary } from '../lib/nursingWorkforce';
-import { Heart, Users, FileText, GraduationCap, Award, AlertTriangle, Building2, ClipboardCheck, Clock, CheckCircle } from 'lucide-react';
+import { getHospitalScope } from '../lib/scope';
+import { useAuth } from '../contexts/AuthContext';
 import StatCard from '../components/common/StatCard';
+import { Heart, Users, FileText, GraduationCap, Award, AlertTriangle, Building2, ClipboardCheck, Clock, CheckCircle, ArrowUpRight } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function NursingDashboardPage() {
+  const { user } = useAuth();
+  const hospitalScope = getHospitalScope(user);
+  const hf: FilterConstraint[] = hospitalScope ? [{ field: 'hospital_id', op: '==', value: hospitalScope }] : [];
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalNurses: 0,
@@ -30,16 +35,16 @@ export default function NursingDashboardPage() {
     setLoading(true);
     try {
       const [summary, audits, programs, certs] = await Promise.all([
-        getNursingWorkforceSummary(),
-        getDocsAll('nursingAudits', [], { field: 'audit_date', dir: 'desc' }),
-        getDocsAll('trainingPrograms', [], { field: 'start_date', dir: 'desc' }),
-        getDocsAll('certifications', [], { field: 'issue_date', dir: 'desc' }),
+        getNursingWorkforceSummary(hospitalScope),
+        getDocsAll('nursingAudits', hf, { field: 'audit_date', dir: 'desc' }),
+        getDocsAll('trainingPrograms', hf, { field: 'start_date', dir: 'desc' }),
+        getDocsAll('certifications', hf, { field: 'issue_date', dir: 'desc' }),
       ]);
 
       const totalNurses = summary.reduce((sum: number, s: any) => sum + (s.total_nurses || 0), 0);
       const totalVacancies = summary.reduce((sum: number, s: any) => sum + (s.total_vacancies || 0), 0);
 
-      const gapRecords = await getDocsAll('nursingWorkforce', [], { field: 'reporting_period', dir: 'desc' });
+      const gapRecords = await getDocsAll('nursingWorkforce', hf, { field: 'reporting_period', dir: 'desc' });
       const latestGaps = gapRecords.filter((r: any) => r.staffing_gaps).slice(0, 5);
 
       setStats({
@@ -70,42 +75,60 @@ export default function NursingDashboardPage() {
     }
   };
 
+  const tooltipStyle = {
+    borderRadius: '12px',
+    border: '1px solid #e2e8f0',
+    boxShadow: '0 8px 30px rgba(0,0,0,0.08)',
+    padding: '10px 14px',
+    background: 'rgba(255,255,255,0.95)',
+    backdropFilter: 'blur(8px)',
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-[#008751] border-t-transparent rounded-full animate-spin" />
+        <div className="w-10 h-10 rounded-full border-4 border-emerald-200 border-t-emerald-700 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <div className="flex items-center gap-2 text-sm text-slate-500 mb-1">
-          <Heart size={14} className="text-[#008751]" />
-          <span>Dashboard</span>
-          <span className="text-slate-300">/</span>
-          <span className="text-slate-800 font-medium">Nursing Services</span>
+    <div className="space-y-6 animate-fade-in">
+      {/* Header */}
+      <div className="relative overflow-hidden rounded-2xl p-6 lg:p-8 text-white shadow-lg"
+        style={{ background: 'linear-gradient(135deg, #1a0a1a 0%, #3b1a3b 40%, #6b2157 100%)' }}>
+        <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-rose-400/10 blur-[100px] pointer-events-none" />
+        <div className="absolute inset-0 opacity-[0.03]"
+          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M40 0H0v40' fill='none' stroke='%23ffffff' stroke-width='0.5'/%3E%3C/svg%3E")` }}
+        />
+        <div className="relative z-10">
+          <div className="flex items-center gap-2 text-rose-200/80 text-sm mb-2">
+            <Heart size={14} />
+            <span>Dashboard</span>
+            <span className="text-rose-500/50">/</span>
+            <span className="text-white font-medium">Nursing Services</span>
+          </div>
+          <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Nursing Services Dashboard</h1>
+          <p className="mt-1.5 text-rose-100/60 text-sm max-w-xl">Nursing workforce monitoring, training oversight, and quality assurance</p>
         </div>
-        <h1 className="text-2xl font-bold text-slate-900">Nursing Services Dashboard</h1>
-        <p className="text-slate-500 mt-1 text-sm">Nursing workforce monitoring, training oversight, and quality assurance</p>
       </div>
 
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <StatCard title="Total Nurses" value={stats.totalNurses} icon={Users} color="primary" subtitle="Across all hospitals" />
-        <StatCard title="Staffing Vacancies" value={stats.totalVacancies} icon={AlertTriangle} color="orange" subtitle="Unfilled positions" />
-        <StatCard title="Nursing Audits" value={stats.totalAudits} icon={FileText} color="teal" subtitle="Total records" />
-        <StatCard title="Training Programmes" value={stats.totalPrograms} icon={GraduationCap} color="blue" subtitle="Total programmes" />
-        <StatCard title="Certifications" value={stats.totalCertifications} icon={Award} color="army" subtitle="Total certifications" />
-        <StatCard title="Hospitals Covered" value={stats.hospitals} icon={Building2} color="primary" subtitle="With workforce data" />
+        <StatCard title="Total Nurses" value={stats.totalNurses} icon={Users} color="primary" subtitle="Across all hospitals" delay={0} />
+        <StatCard title="Staffing Vacancies" value={stats.totalVacancies} icon={AlertTriangle} color="rose" subtitle="Unfilled positions" trend={stats.totalVacancies > 0 ? 'down' : undefined} trendValue={stats.totalVacancies > 0 ? 'Attention needed' : 'Fully staffed'} delay={50} />
+        <StatCard title="Nursing Audits" value={stats.totalAudits} icon={FileText} color="blue" subtitle="Total records" delay={100} />
+        <StatCard title="Training Programmes" value={stats.totalPrograms} icon={GraduationCap} color="purple" subtitle="Total programmes" delay={150} />
+        <StatCard title="Certifications" value={stats.totalCertifications} icon={Award} color="teal" subtitle="Total certifications" delay={200} />
+        <StatCard title="Hospitals Covered" value={stats.hospitals} icon={Building2} color="army" subtitle="With workforce data" delay={250} />
       </div>
 
+      {/* Charts + Staffing Gaps */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Workforce Distribution Chart */}
-        <div className="card">
-          <div className="card-header">
+        <div className="card border-t-2 border-t-emerald-400 shadow-sm hover:shadow-md transition-shadow">
+          <div className="card-header bg-gradient-to-r from-emerald-50/50 to-transparent">
             <h3 className="font-semibold text-slate-900 flex items-center gap-2">
-              <Users size={16} className="text-[#008751]" />
+              <Users size={16} className="text-emerald-600" />
               Workforce Distribution by Hospital
             </h3>
           </div>
@@ -115,21 +138,20 @@ export default function NursingDashboardPage() {
             ) : (
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={workforceByHospital}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis dataKey="name" tick={{ fontSize: 11 }} angle={-20} textAnchor="end" height={60} />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="nurses" name="Nurses" fill="#008751" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="vacancies" name="Vacancies" fill="#e11d48" radius={[4, 4, 0, 0]} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} angle={-20} textAnchor="end" height={60} axisLine={{ stroke: '#e2e8f0' }} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                  <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(0,135,81,0.04)' }} />
+                  <Bar dataKey="nurses" name="Nurses" fill="#008751" radius={[6, 6, 0, 0]} maxBarSize={50} />
+                  <Bar dataKey="vacancies" name="Vacancies" fill="#e11d48" radius={[6, 6, 0, 0]} maxBarSize={50} />
                 </BarChart>
               </ResponsiveContainer>
             )}
           </div>
         </div>
 
-        {/* Staffing Gaps */}
-        <div className="card">
-          <div className="card-header">
+        <div className="card border-t-2 border-t-orange-400 shadow-sm hover:shadow-md transition-shadow">
+          <div className="card-header bg-gradient-to-r from-orange-50/50 to-transparent">
             <h3 className="font-semibold text-slate-900 flex items-center gap-2">
               <AlertTriangle size={16} className="text-orange-500" />
               Staffing Gaps
@@ -141,15 +163,15 @@ export default function NursingDashboardPage() {
             ) : (
               <div className="space-y-3">
                 {staffingGaps.map((r: any) => (
-                  <div key={r.id} className="p-3 bg-orange-50 rounded-lg border border-orange-200">
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="text-sm font-medium text-slate-800">{r.hospital_name || r.hospital_id}</p>
-                      <span className="text-xs text-slate-500">{r.reporting_period}</span>
+                  <div key={r.id} className="p-4 rounded-xl bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200/60 hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-semibold text-slate-800">{r.hospital_name || r.hospital_id}</p>
+                      <span className="text-xs font-medium text-slate-500 bg-white px-2 py-0.5 rounded-full">{r.reporting_period}</span>
                     </div>
-                    <p className="text-xs text-slate-600">{r.staffing_gaps}</p>
-                    <div className="flex gap-3 mt-2 text-xs">
-                      <span className="text-emerald-700 font-medium">{r.nurse_count || 0} nurses</span>
-                      <span className="text-red-600 font-medium">{r.vacancies || 0} vacancies</span>
+                    <p className="text-xs text-slate-600 leading-relaxed">{r.staffing_gaps}</p>
+                    <div className="flex gap-4 mt-3">
+                      <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg">{r.nurse_count || 0} nurses</span>
+                      <span className="text-xs font-semibold text-red-600 bg-red-50 px-2.5 py-1 rounded-lg">{r.vacancies || 0} vacancies</span>
                     </div>
                   </div>
                 ))}
@@ -159,23 +181,25 @@ export default function NursingDashboardPage() {
         </div>
 
         {/* Recent Audits */}
-        <div className="card">
-          <div className="card-header">
+        <div className="card border-t-2 border-t-indigo-400 shadow-sm hover:shadow-md transition-shadow">
+          <div className="card-header bg-gradient-to-r from-indigo-50/50 to-transparent">
             <h3 className="font-semibold text-slate-900 flex items-center gap-2">
               <ClipboardCheck size={16} className="text-indigo-500" />
               Recent Nursing Audits
             </h3>
-            <Link to="/nursing-audits" className="text-xs text-indigo-600 hover:opacity-80 font-medium">View All</Link>
+            <Link to="/nursing-audits" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1 transition-colors">
+              View All <ArrowUpRight size={12} />
+            </Link>
           </div>
           <div className="p-4">
             {recentAudits.length === 0 ? (
-              <p className="text-sm text-slate-400 text-center py-4">No audits yet.</p>
+              <p className="text-sm text-slate-400 text-center py-8">No audits yet.</p>
             ) : (
               <div className="space-y-2">
                 {recentAudits.map((a: any) => (
-                  <div key={a.id} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className={`p-1.5 rounded-lg ${a.status === 'completed' || a.status === 'active' ? 'bg-emerald-100' : 'bg-orange-100'}`}>
+                  <div key={a.id} className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-slate-50 to-transparent hover:from-indigo-50 hover:to-transparent transition-all duration-200 border border-transparent hover:border-indigo-100">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`p-2 rounded-lg ${a.status === 'completed' || a.status === 'active' ? 'bg-emerald-100' : 'bg-orange-100'}`}>
                         {a.status === 'completed' || a.status === 'active' ? <CheckCircle size={14} className="text-emerald-600" /> : <Clock size={14} className="text-orange-500" />}
                       </div>
                       <div className="min-w-0">
@@ -183,7 +207,10 @@ export default function NursingDashboardPage() {
                         <p className="text-xs text-slate-400">{a.hospital_name || 'N/A'}</p>
                       </div>
                     </div>
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${a.status === 'completed' || a.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'}`}>{a.status}</span>
+                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full flex-shrink-0 ml-3 ${
+                      a.status === 'completed' || a.status === 'active' ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20' :
+                      'bg-orange-50 text-orange-700 ring-1 ring-orange-600/20'
+                    }`}>{a.status}</span>
                   </div>
                 ))}
               </div>
@@ -192,27 +219,30 @@ export default function NursingDashboardPage() {
         </div>
 
         {/* Recent Training Programs */}
-        <div className="card">
-          <div className="card-header">
+        <div className="card border-t-2 border-t-violet-400 shadow-sm hover:shadow-md transition-shadow">
+          <div className="card-header bg-gradient-to-r from-violet-50/50 to-transparent">
             <h3 className="font-semibold text-slate-900 flex items-center gap-2">
               <GraduationCap size={16} className="text-violet-500" />
               Recent Training Programmes
             </h3>
-            <Link to="/nursing-training" className="text-xs text-violet-600 hover:opacity-80 font-medium">View All</Link>
+            <Link to="/nursing-training" className="text-xs text-violet-600 hover:text-violet-700 font-medium flex items-center gap-1 transition-colors">
+              View All <ArrowUpRight size={12} />
+            </Link>
           </div>
           <div className="p-4">
             {recentPrograms.length === 0 ? (
-              <p className="text-sm text-slate-400 text-center py-4">No training programmes yet.</p>
+              <p className="text-sm text-slate-400 text-center py-8">No training programmes yet.</p>
             ) : (
               <div className="space-y-2">
                 {recentPrograms.map((p: any) => (
-                  <div key={p.id} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-lg">
+                  <div key={p.id} className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-slate-50 to-transparent hover:from-violet-50 hover:to-transparent transition-all duration-200 border border-transparent hover:border-violet-100">
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-slate-800 truncate">{p.title}</p>
-                      <p className="text-xs text-slate-400">{p.start_date} &mdash; {p.end_date}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">{p.start_date} &mdash; {p.end_date}</p>
                     </div>
-                    <div className="text-right flex-shrink-0 ml-2">
-                      <span className="text-xs font-semibold text-slate-600">{p.participants || 0} participants</span>
+                    <div className="text-right flex-shrink-0 ml-3">
+                      <span className="text-sm font-bold text-slate-700 tabular-nums">{p.participants || 0}</span>
+                      <p className="text-[10px] text-slate-400">participants</p>
                     </div>
                   </div>
                 ))}
@@ -220,36 +250,38 @@ export default function NursingDashboardPage() {
             )}
           </div>
         </div>
+      </div>
 
-        {/* Recent Certifications */}
-        <div className="card lg:col-span-2">
-          <div className="card-header">
-            <h3 className="font-semibold text-slate-900 flex items-center gap-2">
-              <Award size={16} className="text-army-500" />
-              Recent Certifications
-            </h3>
-            <Link to="/nursing-training?tab=certifications" className="text-xs text-army-600 hover:opacity-80 font-medium">View All</Link>
-          </div>
-          <div className="p-4">
-            {recentCerts.length === 0 ? (
-              <p className="text-sm text-slate-400 text-center py-4">No certifications yet.</p>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {recentCerts.map((c: any) => (
-                  <div key={c.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                    <div className="p-2 bg-army-50 rounded-lg">
-                      <Award size={16} className="text-army-600" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-slate-800 truncate">{c.certification_name}</p>
-                      <p className="text-xs text-slate-400 truncate">{c.employee_name || c.employee_id}</p>
-                      <p className="text-xs text-slate-400">{c.issuing_body}</p>
-                    </div>
+      {/* Recent Certifications */}
+      <div className="card border-t-2 border-t-army-400 shadow-sm hover:shadow-md transition-shadow">
+        <div className="card-header bg-gradient-to-r from-army-50/50 to-transparent">
+          <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+            <Award size={16} className="text-army-500" />
+            Recent Certifications
+          </h3>
+          <Link to="/nursing-training?tab=certifications" className="text-xs text-army-600 hover:text-army-700 font-medium flex items-center gap-1 transition-colors">
+            View All <ArrowUpRight size={12} />
+          </Link>
+        </div>
+        <div className="p-5">
+          {recentCerts.length === 0 ? (
+            <p className="text-sm text-slate-400 text-center py-8">No certifications yet.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {recentCerts.map((c: any) => (
+                <div key={c.id} className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-slate-50 to-white border border-slate-100 hover:border-army-200 hover:shadow-md transition-all duration-200 group">
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-army-50 to-army-100 group-hover:scale-110 transition-transform">
+                    <Award size={20} className="text-army-600" />
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-slate-800 truncate">{c.certification_name}</p>
+                    <p className="text-xs text-slate-500 truncate">{c.employee_name || c.employee_id}</p>
+                    <p className="text-xs text-slate-400 truncate">{c.issuing_body}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

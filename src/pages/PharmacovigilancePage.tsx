@@ -7,11 +7,13 @@ import { Plus, Search, Pencil, Trash2, AlertTriangle, Building2, Calendar, Alert
 import StatCard from '../components/common/StatCard';
 import { getPharmacovigilanceReports, createPharmacovigilanceReport, updatePharmacovigilanceReport } from '../lib/pharmaceutical';
 import { getAllHospitals } from '../lib/hospitals';
+import { getHospitalScope } from '../lib/scope';
 
 export default function PharmacovigilancePage() {
-  const { hasRole } = useAuth();
-  const canManage = hasRole('super_admin', 'director_pharmaceutical_services');
-  const canSubmit = hasRole('super_admin', 'director_pharmaceutical_services', 'hospital_admin');
+  const { hasRole, user } = useAuth();
+  const canManage = hasRole('super_admin', 'pharmacy_admin');
+  const canSubmit = hasRole('super_admin', 'pharmacy_admin', 'hospital_admin');
+  const hospitalScope = getHospitalScope(user);
   const [items, setItems] = useState<any[]>([]);
   const [hospitals, setHospitals] = useState<{ id: string; hospital_name: string }[]>([]);
   const [pagination, setPagination] = useState<PaginationType>({ page: 1, limit: 50, total: 0, totalPages: 0 });
@@ -24,7 +26,7 @@ export default function PharmacovigilancePage() {
   const loadData = async (page = 1) => {
     setLoading(true);
     try {
-      const { data, total } = await getPharmacovigilanceReports(page, 50, search || undefined);
+      const { data, total } = await getPharmacovigilanceReports(page, 50, search || undefined, hospitalScope);
       setItems(data);
       setPagination({ page, limit: 50, total, totalPages: Math.ceil(total / 50) });
     } finally {
@@ -38,7 +40,7 @@ export default function PharmacovigilancePage() {
 
   const loadHospitals = async () => {
     try {
-      const data = await getAllHospitals();
+      const data = await getAllHospitals(hospitalScope);
       setHospitals((data || []).map((h: any) => ({ id: h.id, hospital_name: h.hospital_name })));
     } catch {}
   };

@@ -1,5 +1,4 @@
-import { LucideIcon, TrendingUp, TrendingDown } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
+import { LucideIcon, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 interface StatCardProps {
   title: string;
@@ -9,128 +8,137 @@ interface StatCardProps {
   subtitle?: string;
   trend?: 'up' | 'down' | 'neutral';
   trendValue?: string;
+  delay?: number;
 }
 
 function AnimatedValue({ value }: { value: number }) {
-  const [display, setDisplay] = useState(0);
-  const ref = useRef<HTMLSpanElement>(null);
-
-  useEffect(() => {
-    let start = 0;
-    const duration = 600;
-    const startTime = performance.now();
-
-    const animate = (now: number) => {
-      const elapsed = now - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      start = Math.floor(eased * value);
-      setDisplay(start);
-      if (progress < 1) requestAnimationFrame(animate);
-    };
-
-    requestAnimationFrame(animate);
-  }, [value]);
-
-  return <span ref={ref}>{display.toLocaleString()}</span>;
+  const display = value;
+  return <span>{display.toLocaleString()}</span>;
 }
 
-export default function StatCard({ title, value, icon: Icon, color = 'primary', subtitle, trend, trendValue }: StatCardProps) {
+export default function StatCard({ title, value, icon: Icon, color = 'primary', subtitle, trend, trendValue, delay = 0 }: StatCardProps) {
   const variants: Record<string, {
     bg: string;
-    gradient: string;
-    iconBg: string;
-    ring: string;
     text: string;
+    iconBg: string;
+    iconColor: string;
+    border: string;
+    glow: string;
   }> = {
     primary: {
-      bg: 'bg-gradient-to-br from-emerald-50 to-green-50',
-      gradient: 'from-[#008751] to-[#006838]',
-      iconBg: 'bg-gradient-to-br from-[#008751] to-[#006838]',
-      ring: 'ring-[#008751]/10',
-      text: 'text-[#008751]',
+      bg: 'bg-emerald-50/40',
+      text: 'text-emerald-700',
+      iconBg: 'bg-emerald-100',
+      iconColor: 'text-emerald-600',
+      border: 'border-emerald-200/50',
+      glow: 'group-hover:shadow-[0_4px_20px_rgba(0,135,81,0.08)] group-hover:border-emerald-300/50',
     },
     teal: {
-      bg: 'bg-gradient-to-br from-teal-50 to-emerald-50',
-      gradient: 'from-teal-500 to-emerald-600',
-      iconBg: 'bg-gradient-to-br from-teal-500 to-emerald-600',
-      ring: 'ring-teal-500/10',
-      text: 'text-teal-600',
+      bg: 'bg-teal-50/40',
+      text: 'text-teal-700',
+      iconBg: 'bg-teal-100',
+      iconColor: 'text-teal-600',
+      border: 'border-teal-200/50',
+      glow: 'group-hover:shadow-[0_4px_20px_rgba(13,148,136,0.08)] group-hover:border-teal-300/50',
     },
     blue: {
-      bg: 'bg-gradient-to-br from-blue-50 to-indigo-50',
-      gradient: 'from-blue-500 to-indigo-600',
-      iconBg: 'bg-gradient-to-br from-blue-500 to-indigo-600',
-      ring: 'ring-blue-500/10',
-      text: 'text-blue-600',
+      bg: 'bg-blue-50/40',
+      text: 'text-blue-700',
+      iconBg: 'bg-blue-100',
+      iconColor: 'text-blue-600',
+      border: 'border-blue-200/50',
+      glow: 'group-hover:shadow-[0_4px_20px_rgba(59,130,246,0.08)] group-hover:border-blue-300/50',
     },
     purple: {
-      bg: 'bg-gradient-to-br from-purple-50 to-violet-50',
-      gradient: 'from-purple-500 to-violet-600',
-      iconBg: 'bg-gradient-to-br from-purple-500 to-violet-600',
-      ring: 'ring-purple-500/10',
-      text: 'text-purple-600',
+      bg: 'bg-purple-50/40',
+      text: 'text-purple-700',
+      iconBg: 'bg-purple-100',
+      iconColor: 'text-purple-600',
+      border: 'border-purple-200/50',
+      glow: 'group-hover:shadow-[0_4px_20px_rgba(139,92,246,0.08)] group-hover:border-purple-300/50',
     },
     orange: {
-      bg: 'bg-gradient-to-br from-orange-50 to-amber-50',
-      gradient: 'from-orange-500 to-amber-600',
-      iconBg: 'bg-gradient-to-br from-orange-500 to-amber-600',
-      ring: 'ring-orange-500/10',
-      text: 'text-orange-600',
+      bg: 'bg-orange-50/40',
+      text: 'text-orange-700',
+      iconBg: 'bg-orange-100',
+      iconColor: 'text-orange-600',
+      border: 'border-orange-200/50',
+      glow: 'group-hover:shadow-[0_4px_20px_rgba(249,115,22,0.08)] group-hover:border-orange-300/50',
     },
     army: {
-      bg: 'bg-gradient-to-br from-army-50 to-sage-50',
-      gradient: 'from-army-700 to-army-600',
-      iconBg: 'bg-gradient-to-br from-army-700 to-army-600',
-      ring: 'ring-army-700/10',
-      text: 'text-army-700',
+      bg: 'bg-lime-50/40',
+      text: 'text-lime-700',
+      iconBg: 'bg-lime-100',
+      iconColor: 'text-lime-600',
+      border: 'border-lime-200/50',
+      glow: 'group-hover:shadow-[0_4px_20px_rgba(101,163,13,0.08)] group-hover:border-lime-300/50',
     },
     lemon: {
-      bg: 'bg-gradient-to-br from-lemon-50 to-lime-50',
-      gradient: 'from-lemon-500 to-lime-600',
-      iconBg: 'bg-gradient-to-br from-lemon-500 to-lime-600',
-      ring: 'ring-lemon-500/10',
-      text: 'text-lemon-600',
+      bg: 'bg-amber-50/40',
+      text: 'text-amber-700',
+      iconBg: 'bg-amber-100',
+      iconColor: 'text-amber-600',
+      border: 'border-amber-200/50',
+      glow: 'group-hover:shadow-[0_4px_20px_rgba(217,119,6,0.08)] group-hover:border-amber-300/50',
     },
     sage: {
-      bg: 'bg-gradient-to-br from-sage-50 to-army-50',
-      gradient: 'from-sage-400 to-sage-500',
-      iconBg: 'bg-gradient-to-br from-sage-400 to-sage-500',
-      ring: 'ring-sage-400/10',
-      text: 'text-sage-600',
+      bg: 'bg-emerald-50/40',
+      text: 'text-emerald-700',
+      iconBg: 'bg-emerald-100',
+      iconColor: 'text-emerald-600',
+      border: 'border-emerald-200/50',
+      glow: 'group-hover:shadow-[0_4px_20px_rgba(0,135,81,0.08)] group-hover:border-emerald-300/50',
+    },
+    rose: {
+      bg: 'bg-rose-50/40',
+      text: 'text-rose-700',
+      iconBg: 'bg-rose-100',
+      iconColor: 'text-rose-600',
+      border: 'border-rose-200/50',
+      glow: 'group-hover:shadow-[0_4px_20px_rgba(244,63,94,0.08)] group-hover:border-rose-300/50',
+    },
+    indigo: {
+      bg: 'bg-indigo-50/40',
+      text: 'text-indigo-700',
+      iconBg: 'bg-indigo-100',
+      iconColor: 'text-indigo-600',
+      border: 'border-indigo-200/50',
+      glow: 'group-hover:shadow-[0_4px_20px_rgba(99,102,241,0.08)] group-hover:border-indigo-300/50',
     },
   };
 
   const v = variants[color] || variants.primary;
 
   return (
-    <div className={`card p-5 hover:shadow-lg transition-all duration-300 group animate-slide-up ${v.bg}`}>
-      <div className="flex items-start justify-between">
-        <div className="space-y-1">
-          <p className="text-xs font-semibold text-slate-500 tracking-wide uppercase">{title}</p>
-          <p className={`stat-value ${v.text} group-hover:scale-105 transition-transform origin-left`}>
-            <AnimatedValue value={value} />
-          </p>
-          {subtitle && <p className="text-xs text-slate-400/80 mt-0.5">{subtitle}</p>}
+    <div
+      className={`rounded-xl border ${v.border} ${v.bg} p-4 hover:bg-white transition-all duration-300 group animate-slide-up ${v.glow}`}
+      style={{ animationDelay: `${delay}ms`, animationFillMode: 'both' }}
+    >
+      <div className="flex items-center gap-3">
+        <div className={`p-2.5 rounded-xl ${v.iconBg} ${v.iconColor} group-hover:scale-110 transition-all duration-300`}>
+          <Icon size={18} />
         </div>
-        <div className={`p-3 rounded-2xl shadow-sm ${v.iconBg} ${v.ring} ring-2 group-hover:scale-110 transition-transform duration-300`}>
-          <Icon size={20} className="text-white" />
-        </div>
-      </div>
-      <div className="mt-3 flex items-center justify-between">
-        {(trend || trendValue) && (
-          <div className="flex items-center gap-1.5 text-xs font-medium">
-            {trend === 'up' && <TrendingUp size={14} className="text-emerald-500" />}
-            {trend === 'down' && <TrendingDown size={14} className="text-red-500" />}
-            {trend === 'neutral' && <span className="w-2 h-2 rounded-full bg-amber-500" />}
-            <span className={
-              trend === 'up' ? 'text-emerald-600' :
-              trend === 'down' ? 'text-red-600' :
-              'text-amber-600'
-            }>{trendValue}</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-[11px] font-semibold text-slate-500 tracking-wide">{title}</p>
+          <div className="flex items-baseline gap-1.5">
+            <p className={`text-2xl font-bold tracking-tight ${v.text} tabular-nums`}>
+              <AnimatedValue value={value} />
+            </p>
+            {(trend || trendValue) && (
+              <span className="flex items-center gap-0.5 text-xs font-medium">
+                {trend === 'up' && <TrendingUp size={12} className="text-emerald-500" />}
+                {trend === 'down' && <TrendingDown size={12} className="text-red-500" />}
+                {trend === 'neutral' && <Minus size={12} className="text-amber-500" />}
+                <span className={
+                  trend === 'up' ? 'text-emerald-600' :
+                  trend === 'down' ? 'text-red-600' :
+                  'text-amber-600'
+                }>{trendValue}</span>
+              </span>
+            )}
           </div>
-        )}
-        <div className={`h-1 flex-1 ml-3 rounded-full bg-gradient-to-r ${v.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+          {subtitle && <p className="text-[11px] text-slate-400 mt-0.5">{subtitle}</p>}
+        </div>
       </div>
     </div>
   );

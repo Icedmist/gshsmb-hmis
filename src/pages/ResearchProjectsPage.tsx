@@ -23,7 +23,7 @@ export default function ResearchProjectsPage() {
   const [docForm, setDocForm] = useState({ document_name: '', document_url: '', document_type: '' });
   const [showDocModal, setShowDocModal] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
-  const isAdmin = hasRole('super_admin') || hasRole('director_prs');
+  const isAdmin = hasRole('super_admin') || hasRole('director_prs') || hasRole('prs_admin');
 
   const loadProjects = async (page = 1) => {
     setLoading(true);

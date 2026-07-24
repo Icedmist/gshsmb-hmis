@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { User, Pagination as PaginationType, ROLE_LABELS } from '../types';
-import { getUsers, updateUser } from '../lib/users';
+import { getUsers, updateUser, deleteUser } from '../lib/users';
 import { getAllHospitals } from '../lib/hospitals';
 import { auth } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
+import { getHospitalScope, isHospitalScopedRole } from '../lib/scope';
 import Modal from '../components/common/Modal';
 import Pagination from '../components/common/Pagination';
-import { Plus, Search, Shield, Pencil, ChevronDown } from 'lucide-react';
+import { Plus, Search, Shield, Pencil, Trash2, ChevronDown } from 'lucide-react';
 
 export default function UsersPage() {
   const { user } = useAuth();
@@ -19,7 +20,7 @@ export default function UsersPage() {
   const [editUser, setEditUser] = useState<User | null>(null);
   const [form, setForm] = useState({ full_name: '', email: '', phone_number: '', role: '', hospital_id: '', password: '' });
 
-  const hospitalScope = user?.role === 'hospital_admin' ? (user.hospital_id || undefined) : undefined;
+  const hospitalScope = getHospitalScope(user);
 
   const loadUsers = async (page = 1) => {
     setLoading(true);
@@ -34,7 +35,7 @@ export default function UsersPage() {
 
   const loadHospitals = async () => {
     try {
-      const data = await getAllHospitals();
+      const data = await getAllHospitals(hospitalScope);
       setHospitals((data || []).map((h: any) => ({ id: h.id, hospital_name: h.hospital_name })));
     } catch {}
   };
@@ -97,6 +98,17 @@ export default function UsersPage() {
     if (!confirm(`Are you sure you want to ${newStatus === 'active' ? 'activate' : 'deactivate'} ${user.full_name}?`)) return;
     try {
       await updateUser(user.id, { status: newStatus });
+      loadUsers(pagination.page);
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const handleDelete = async (u: User) => {
+    if (!confirm(`Delete user ${u.full_name} (${u.email}) permanently? This cannot be undone.`)) return;
+    if (u.id === user?.id) { alert('You cannot delete your own account.'); return; }
+    try {
+      await deleteUser(u.id);
       loadUsers(pagination.page);
     } catch (err: any) {
       alert(err.message);
@@ -171,6 +183,7 @@ export default function UsersPage() {
                         <button onClick={() => handleToggleStatus(user)} className="btn btn-sm btn-secondary">
                           {user.status === 'active' ? 'Deactivate' : 'Activate'}
                         </button>
+                        <button onClick={() => handleDelete(user)} className="btn btn-sm btn-danger"><Trash2 size={14} /></button>
                       </div>
                     </td>
                   </tr>
@@ -206,16 +219,23 @@ export default function UsersPage() {
                 <option value="executive_secretary">Executive Secretary</option>
                 <option value="hospital_admin">Hospital Admin</option>
                 <option value="hr_officer">HR Officer</option>
+                <option value="director_hr">Director HR</option>
                 <option value="director_medical_services">Director Medical Services</option>
                 <option value="director_nursing_services">Director Nursing Services</option>
                 <option value="director_prs">Director PRS</option>
                 <option value="director_pharmaceutical_services">Director Pharmaceutical Services</option>
                 <option value="director_laboratory_services">Director Medical Laboratory Services</option>
+                <option value="director_finance">Director Finance and Accounts</option>
+                <option value="lab_admin">Lab Admin</option>
+                <option value="pharmacy_admin">Pharmacy Admin</option>
+                <option value="nursing_admin">Nursing Admin</option>
+                <option value="medical_admin">Medical Admin</option>
+                <option value="prs_admin">PRS Admin</option>
               </select>
               <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             </div>
           </div>
-          {form.role === 'hospital_admin' && (
+          {isHospitalScopedRole(form.role) && (
             <div>
               <label className="label">Assigned Hospital</label>
               <div className="relative">

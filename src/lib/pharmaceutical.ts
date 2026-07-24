@@ -73,8 +73,9 @@ export const createPharmaceuticalAuditFinding = async (data: any): Promise<strin
 export const updatePharmaceuticalAuditFinding = async (id: string, data: any): Promise<void> => updateDocument('pharmaceuticalAuditFindings', id, data);
 
 // Pharmaceutical Workforce
-export const getPharmaceuticalWorkforce = async (page = 1, limit = 50, search?: string): Promise<PaginationResult<any>> => {
+export const getPharmaceuticalWorkforce = async (page = 1, limit = 50, search?: string, hospitalId?: string): Promise<PaginationResult<any>> => {
   const filters: FilterConstraint[] = [];
+  if (hospitalId) filters.push({ field: 'hospital_id', op: '==', value: hospitalId });
   if (search) {
     const { data } = await getDocsPaginated('pharmaceuticalWorkforce', filters, { field: 'reporting_period', dir: 'desc' }, limit, page);
     return { data: await Promise.all(data.map((w: any) => enrichHospital(w))), total: data.length };
@@ -85,11 +86,16 @@ export const getPharmaceuticalWorkforce = async (page = 1, limit = 50, search?: 
 
 export const createPharmaceuticalWorkforce = async (data: any): Promise<string> => addDocument('pharmaceuticalWorkforce', data);
 export const updatePharmaceuticalWorkforce = async (id: string, data: any): Promise<void> => updateDocument('pharmaceuticalWorkforce', id, data);
-export const getAllPharmaceuticalWorkforce = async (): Promise<any[]> => getDocsAll('pharmaceuticalWorkforce');
+export const getAllPharmaceuticalWorkforce = async (hospitalId?: string): Promise<any[]> => {
+  const filters: FilterConstraint[] = [];
+  if (hospitalId) filters.push({ field: 'hospital_id', op: '==', value: hospitalId });
+  return getDocsAll('pharmaceuticalWorkforce', filters);
+};
 
 // Pharmacovigilance
-export const getPharmacovigilanceReports = async (page = 1, limit = 50, search?: string): Promise<PaginationResult<any>> => {
+export const getPharmacovigilanceReports = async (page = 1, limit = 50, search?: string, hospitalId?: string): Promise<PaginationResult<any>> => {
   const filters: FilterConstraint[] = [];
+  if (hospitalId) filters.push({ field: 'hospital_id', op: '==', value: hospitalId });
   if (search) {
     const { data } = await getDocsPaginated('pharmacovigilanceReports', filters, { field: 'report_date', dir: 'desc' }, limit, page);
     const searchLower = search.toLowerCase();
@@ -102,11 +108,16 @@ export const getPharmacovigilanceReports = async (page = 1, limit = 50, search?:
 
 export const createPharmacovigilanceReport = async (data: any): Promise<string> => addDocument('pharmacovigilanceReports', { ...data, status: data.status || 'active' });
 export const updatePharmacovigilanceReport = async (id: string, data: any): Promise<void> => updateDocument('pharmacovigilanceReports', id, data);
-export const getAllPharmacovigilanceReports = async (): Promise<any[]> => getDocsAll('pharmacovigilanceReports');
+export const getAllPharmacovigilanceReports = async (hospitalId?: string): Promise<any[]> => {
+  const filters: FilterConstraint[] = [];
+  if (hospitalId) filters.push({ field: 'hospital_id', op: '==', value: hospitalId });
+  return getDocsAll('pharmacovigilanceReports', filters);
+};
 
 // Quality Assurance Reports
-export const getPharmaceuticalQualityReports = async (page = 1, limit = 50, search?: string): Promise<PaginationResult<any>> => {
+export const getPharmaceuticalQualityReports = async (page = 1, limit = 50, search?: string, hospitalId?: string): Promise<PaginationResult<any>> => {
   const filters: FilterConstraint[] = [];
+  if (hospitalId) filters.push({ field: 'hospital_id', op: '==', value: hospitalId });
   if (search) {
     const { data } = await getDocsPaginated('pharmaceuticalQualityReports', filters, { field: 'report_date', dir: 'desc' }, limit, page);
     const searchLower = search.toLowerCase();
@@ -119,11 +130,16 @@ export const getPharmaceuticalQualityReports = async (page = 1, limit = 50, sear
 
 export const createPharmaceuticalQualityReport = async (data: any): Promise<string> => addDocument('pharmaceuticalQualityReports', { ...data, status: data.status || 'active' });
 export const updatePharmaceuticalQualityReport = async (id: string, data: any): Promise<void> => updateDocument('pharmaceuticalQualityReports', id, data);
-export const getAllPharmaceuticalQualityReports = async (): Promise<any[]> => getDocsAll('pharmaceuticalQualityReports');
+export const getAllPharmaceuticalQualityReports = async (hospitalId?: string): Promise<any[]> => {
+  const filters: FilterConstraint[] = [];
+  if (hospitalId) filters.push({ field: 'hospital_id', op: '==', value: hospitalId });
+  return getDocsAll('pharmaceuticalQualityReports', filters);
+};
 
 // Pharmaceutical Reports (generated)
-export const getPharmaceuticalReports = async (page = 1, limit = 50, search?: string): Promise<PaginationResult<any>> => {
+export const getPharmaceuticalReports = async (page = 1, limit = 50, search?: string, hospitalId?: string): Promise<PaginationResult<any>> => {
   const filters: FilterConstraint[] = [{ field: 'report_category', op: '==', value: 'pharmaceutical' }];
+  if (hospitalId) filters.push({ field: 'hospital_id', op: '==', value: hospitalId });
   if (search) {
     const { data } = await getDocsPaginated('generatedReports', filters, { field: 'created_at', dir: 'desc' }, limit, page);
     const filtered = data.filter((r: any) => r.title?.toLowerCase().includes(search.toLowerCase()));

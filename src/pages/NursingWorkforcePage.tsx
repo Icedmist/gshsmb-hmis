@@ -6,11 +6,13 @@ import { useAuth } from '../contexts/AuthContext';
 import { Search, Pencil, Trash2, Users, Briefcase, Building2, LayoutGrid, Plus } from 'lucide-react';
 import StatCard from '../components/common/StatCard';
 import { getNursingWorkforce, createNursingWorkforce, updateNursingWorkforce, deleteNursingWorkforce, getNursingWorkforceSummary } from '../lib/nursingWorkforce';
+import { getHospitalScope } from '../lib/scope';
 import { getHospitals } from '../lib/hospitals';
 import { getAllDepartments } from '../lib/departments';
 
 export default function NursingWorkforcePage() {
-  const { hasRole } = useAuth();
+  const { hasRole, user } = useAuth();
+  const hospitalScope = getHospitalScope(user);
   const [items, setItems] = useState<NursingWorkforce[]>([]);
   const [pagination, setPagination] = useState<PaginationType>({ page: 1, limit: 50, total: 0, totalPages: 0 });
   const [search, setSearch] = useState('');
@@ -21,15 +23,15 @@ export default function NursingWorkforcePage() {
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
   const [summary, setSummary] = useState<any[]>([]);
-  const canManage = hasRole('super_admin') || hasRole('director_nursing_services');
+  const canManage = hasRole('super_admin') || hasRole('nursing_admin');
 
   const loadItems = async (page = 1) => {
     setLoading(true);
     try {
-      const { data, total } = await getNursingWorkforce(page, 50, search);
+      const { data, total } = await getNursingWorkforce(page, 50, search || undefined, hospitalScope);
       setItems(data);
       setPagination({ page, limit: 50, total, totalPages: Math.ceil(total / 50) });
-      const s = await getNursingWorkforceSummary();
+      const s = await getNursingWorkforceSummary(hospitalScope);
       setSummary(s);
     } finally {
       setLoading(false);

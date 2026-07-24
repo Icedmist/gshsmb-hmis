@@ -13,7 +13,7 @@ export default function PerformanceIndicatorsPage() {
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ kpi_id: '', indicator_name: '', value: 0, unit: '', reporting_period: '' });
   const [kpis, setKpis] = useState<any[]>([]);
-  const isAdmin = hasRole('super_admin') || hasRole('director_prs');
+  const isAdmin = hasRole('super_admin') || hasRole('director_prs') || hasRole('prs_admin');
 
   const loadIndicators = async () => {
     setLoading(true);

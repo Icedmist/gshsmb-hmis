@@ -40,3 +40,37 @@ export const updateUser = async (id: string, data: Partial<User>): Promise<void>
 export const deleteUser = async (id: string): Promise<void> => {
   await deleteDocument('users', id);
 };
+
+export const getUsersByNames = async (names: string[]): Promise<{ id: string; full_name: string }[]> => {
+  try {
+    const { data } = await getDocsPaginated('users', [], undefined, 500, 1);
+    const lowerNames = names.map(n => n.toLowerCase());
+    return data
+      .filter((u: any) => u.full_name && lowerNames.includes(u.full_name.toLowerCase()))
+      .map((u: any) => ({ id: u.id, full_name: u.full_name }));
+  } catch {
+    return [];
+  }
+};
+
+export const getHospitalAdmins = async (hospitalId?: string): Promise<{ id: string; full_name: string }[]> => {
+  try {
+    const filters: FilterConstraint[] = [{ field: 'role', op: '==', value: 'hospital_admin' }];
+    if (hospitalId) filters.push({ field: 'hospital_id', op: '==', value: hospitalId });
+    const { data } = await getDocsPaginated('users', filters, undefined, 500, 1);
+    return data.map((u: any) => ({ id: u.id, full_name: u.full_name }));
+  } catch {
+    return [];
+  }
+};
+
+export const getExecutiveAdmins = async (): Promise<{ id: string; full_name: string }[]> => {
+  try {
+    const { data } = await getDocsPaginated('users', [
+      { field: 'role', op: 'in', value: ['super_admin', 'executive_secretary'] },
+    ], undefined, 100, 1);
+    return data.map((u: any) => ({ id: u.id, full_name: u.full_name }));
+  } catch {
+    return [];
+  }
+};

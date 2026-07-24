@@ -7,6 +7,7 @@ import { Plus, Search, Pencil, Trash2, Building2, Shield, Check, ChevronDown, Se
 import StatCard from '../components/common/StatCard';
 import { getHospitals, createHospital, updateHospital, deleteHospital } from '../lib/hospitals';
 import { getDepartmentNames, createDepartment } from '../lib/departments';
+import { getHospitalScope } from '../lib/scope';
 
 export default function HospitalsPage() {
   const { hasRole, user } = useAuth();
@@ -22,7 +23,7 @@ export default function HospitalsPage() {
   const [assigningDepts, setAssigningDepts] = useState(false);
   const isAdmin = hasRole('super_admin');
 
-  const hospitalScope = user?.role === 'hospital_admin' ? (user.hospital_id || undefined) : undefined;
+  const hospitalScope = getHospitalScope(user);
 
   const loadHospitals = async (page = 1) => {
     setLoading(true);
@@ -171,7 +172,7 @@ export default function HospitalsPage() {
                   <th>LGA</th>
                   <th>Contact</th>
                   <th>Status</th>
-                  {isAdmin && <th className="text-right">Actions</th>}
+                  <th className="text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -194,7 +195,6 @@ export default function HospitalsPage() {
                     <td>
                       <span className={h.status === 'active' ? 'badge-active' : 'badge-inactive'}>{h.status}</span>
                     </td>
-                    {isAdmin && (
                       <td>
                         <div className="flex items-center justify-end gap-2">
                           <button onClick={() => openEdit(h)} className="btn btn-sm btn-secondary"><Pencil size={14} /></button>
@@ -204,7 +204,6 @@ export default function HospitalsPage() {
                           <button onClick={() => handleDelete(h)} className="btn btn-sm btn-danger"><Trash2 size={14} /></button>
                         </div>
                       </td>
-                    )}
                   </tr>
                 ))}
               </tbody>

@@ -6,11 +6,13 @@ import { useAuth } from '../contexts/AuthContext';
 import { Search, Pencil, Trash2, ClipboardCheck, FileText, Plus, CheckCircle, Clock } from 'lucide-react';
 import StatCard from '../components/common/StatCard';
 import { getNursingAudits, createNursingAudit, updateNursingAudit, deleteNursingAudit, getNursingSupervisionReports, createNursingSupervisionReport, updateNursingSupervisionReport, deleteNursingSupervisionReport } from '../lib/nursingAudits';
+import { getHospitalScope } from '../lib/scope';
 import { getHospitals } from '../lib/hospitals';
 import { getAllDepartments } from '../lib/departments';
 
 export default function NursingAuditsPage() {
-  const { hasRole } = useAuth();
+  const { hasRole, user } = useAuth();
+  const hospitalScope = getHospitalScope(user);
   const [items, setItems] = useState<any[]>([]);
   const [pagination, setPagination] = useState<PaginationType>({ page: 1, limit: 50, total: 0, totalPages: 0 });
   const [search, setSearch] = useState('');
@@ -22,17 +24,17 @@ export default function NursingAuditsPage() {
   const [tab, setTab] = useState<'audits' | 'supervision'>('audits');
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
-  const canManage = hasRole('super_admin') || hasRole('director_nursing_services');
+  const canManage = hasRole('super_admin') || hasRole('nursing_admin');
 
   const loadItems = async (page = 1) => {
     setLoading(true);
     try {
       if (tab === 'audits') {
-        const { data, total } = await getNursingAudits(page, 50, search);
+        const { data, total } = await getNursingAudits(page, 50, search || undefined, hospitalScope);
         setItems(data);
         setPagination({ page, limit: 50, total, totalPages: Math.ceil(total / 50) });
       } else {
-        const { data, total } = await getNursingSupervisionReports(page, 50);
+        const { data, total } = await getNursingSupervisionReports(page, 50, hospitalScope);
         setItems(data);
         setPagination({ page, limit: 50, total, totalPages: Math.ceil(total / 50) });
       }

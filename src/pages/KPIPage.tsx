@@ -20,7 +20,7 @@ export default function KPIPage() {
   const [form, setForm] = useState({ name: '', description: '', target: 0, actual_value: 0, unit: '', reporting_period: '', hospital_id: '', department_id: '' });
   const [hospitals, setHospitals] = useState<any[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
-  const isAdmin = hasRole('super_admin') || hasRole('director_prs');
+  const isAdmin = hasRole('super_admin') || hasRole('director_prs') || hasRole('prs_admin');
 
   const loadKPIs = async (page = 1) => {
     setLoading(true);

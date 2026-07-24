@@ -52,8 +52,10 @@ export const deleteNursingWorkforce = async (id: string): Promise<void> => {
   await deleteDocument('nursingWorkforce', id);
 };
 
-export const getNursingWorkforceSummary = async (): Promise<any[]> => {
-  const data = await getDocsAll('nursingWorkforce', [], { field: 'hospital_id', dir: 'asc' });
+export const getNursingWorkforceSummary = async (hospitalId?: string): Promise<any[]> => {
+  const filters: FilterConstraint[] = [];
+  if (hospitalId) filters.push({ field: 'hospital_id', op: '==', value: hospitalId });
+  const data = await getDocsAll('nursingWorkforce', filters, { field: 'hospital_id', dir: 'asc' });
   const enriched = await Promise.all(data.map(enrichEntry));
 
   const summary = new Map<string, any>();

@@ -7,10 +7,12 @@ import { Plus, Search, Pencil, Trash2, Wrench, Building2, Calendar, DollarSign, 
 import StatCard from '../components/common/StatCard';
 import { getEquipmentMaintenance, createEquipmentMaintenance, updateEquipmentMaintenance, getAllLaboratoryEquipment } from '../lib/laboratory';
 import { getAllHospitals } from '../lib/hospitals';
+import { getHospitalScope } from '../lib/scope';
 
 export default function MaintenanceRecordsPage() {
-  const { hasRole } = useAuth();
-  const canManage = hasRole('super_admin', 'director_laboratory_services');
+  const { hasRole, user } = useAuth();
+  const canManage = hasRole('super_admin', 'lab_admin');
+  const hospitalScope = getHospitalScope(user);
   const [items, setItems] = useState<any[]>([]);
   const [hospitals, setHospitals] = useState<{ id: string; hospital_name: string }[]>([]);
   const [equipment, setEquipment] = useState<any[]>([]);
@@ -24,7 +26,7 @@ export default function MaintenanceRecordsPage() {
   const loadData = async (page = 1) => {
     setLoading(true);
     try {
-      const { data, total } = await getEquipmentMaintenance(page, 50, search || undefined);
+      const { data, total } = await getEquipmentMaintenance(page, 50, search || undefined, undefined, hospitalScope);
       setItems(data);
       setPagination({ page, limit: 50, total, totalPages: Math.ceil(total / 50) });
     } finally {
@@ -38,7 +40,7 @@ export default function MaintenanceRecordsPage() {
 
   const loadFormData = async () => {
     try {
-      const hData = await getAllHospitals();
+      const hData = await getAllHospitals(hospitalScope);
       setHospitals((hData || []).map((h: any) => ({ id: h.id, hospital_name: h.hospital_name })));
       const eData = await getAllLaboratoryEquipment();
       setEquipment(eData || []);

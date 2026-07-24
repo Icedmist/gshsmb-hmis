@@ -5,10 +5,12 @@ import { useAuth } from '../contexts/AuthContext';
 import { Search, FileText, Calendar, Tag, Download } from 'lucide-react';
 import StatCard from '../components/common/StatCard';
 import { getPharmaceuticalReports } from '../lib/pharmaceutical';
+import { getHospitalScope } from '../lib/scope';
 
 export default function PharmaceuticalReportsPage() {
-  const { hasRole } = useAuth();
-  const canView = hasRole('director_pharmaceutical_services', 'executive_secretary');
+  const { hasRole, user } = useAuth();
+  const canView = hasRole('director_pharmaceutical_services', 'executive_secretary', 'pharmacy_admin');
+  const hospitalScope = getHospitalScope(user);
   const [items, setItems] = useState<any[]>([]);
   const [pagination, setPagination] = useState<PaginationType>({ page: 1, limit: 50, total: 0, totalPages: 0 });
   const [search, setSearch] = useState('');
@@ -17,7 +19,7 @@ export default function PharmaceuticalReportsPage() {
   const loadData = async (page = 1) => {
     setLoading(true);
     try {
-      const { data, total } = await getPharmaceuticalReports(page, 50, search || undefined);
+      const { data, total } = await getPharmaceuticalReports(page, 50, search || undefined, hospitalScope);
       setItems(data);
       setPagination({ page, limit: 50, total, totalPages: Math.ceil(total / 50) });
     } finally {

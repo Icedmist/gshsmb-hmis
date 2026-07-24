@@ -155,9 +155,17 @@ export const getDocsAll = async (
   }
 };
 
+const stripUndefined = (data: Record<string, any>): Record<string, any> => {
+  const cleaned: Record<string, any> = {};
+  for (const [key, value] of Object.entries(data)) {
+    if (value !== undefined) cleaned[key] = value;
+  }
+  return cleaned;
+};
+
 export const addDocument = async (col: string, data: DocumentData): Promise<string> => {
   const docData = {
-    ...data,
+    ...stripUndefined(data),
     created_at: Timestamp.now(),
     updated_at: Timestamp.now(),
   };
@@ -167,7 +175,7 @@ export const addDocument = async (col: string, data: DocumentData): Promise<stri
 
 export const updateDocument = async (col: string, id: string, data: DocumentData): Promise<void> => {
   const docData = {
-    ...data,
+    ...stripUndefined(data),
     updated_at: Timestamp.now(),
   };
   await updateDoc(doc(db, col, id), docData);
@@ -175,7 +183,7 @@ export const updateDocument = async (col: string, id: string, data: DocumentData
 
 export const setDocument = async (col: string, id: string, data: DocumentData): Promise<void> => {
   const docData = {
-    ...data,
+    ...stripUndefined(data),
     updated_at: Timestamp.now(),
     created_at: data.created_at || Timestamp.now(),
   };
