@@ -3,7 +3,7 @@ import { Hospital, Pagination as PaginationType } from '../types';
 import Modal from '../components/common/Modal';
 import Pagination from '../components/common/Pagination';
 import { useAuth } from '../contexts/AuthContext';
-import { Plus, Search, Pencil, Trash2, Building2, Shield, Check, ChevronDown, Server, Activity } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Building2, Shield, Check, ChevronDown, Server, Activity, Phone, MapPin, X } from 'lucide-react';
 import StatCard from '../components/common/StatCard';
 import { getHospitals, createHospital, updateHospital, deleteHospital } from '../lib/hospitals';
 import { getDepartmentNames, createDepartment } from '../lib/departments';
@@ -17,10 +17,11 @@ export default function HospitalsPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editHospital, setEditHospital] = useState<Hospital | null>(null);
-  const [form, setForm] = useState({ hospital_name: '', hospital_code: '', address: '', lga: '', contact_email: '', contact_phone: '' });
+  const [form, setForm] = useState({ hospital_name: '', hospital_code: '', hospital_type: '', town_city: '', address: '', lga: '', contact_email: '', contact_phone: '' });
   const [existingDeptNames, setExistingDeptNames] = useState<{ department_name: string; base_code: string; description: string }[]>([]);
   const [selectedDeptNames, setSelectedDeptNames] = useState<string[]>([]);
   const [assigningDepts, setAssigningDepts] = useState(false);
+  const [profileHospital, setProfileHospital] = useState<Hospital | null>(null);
   const isAdmin = hasRole('super_admin');
 
   const hospitalScope = getHospitalScope(user);
@@ -49,7 +50,7 @@ export default function HospitalsPage() {
 
   const openCreate = () => {
     setEditHospital(null);
-    setForm({ hospital_name: '', hospital_code: '', address: '', lga: '', contact_email: '', contact_phone: '' });
+    setForm({ hospital_name: '', hospital_code: '', hospital_type: '', town_city: '', address: '', lga: '', contact_email: '', contact_phone: '' });
     setSelectedDeptNames([]);
     setAssigningDepts(false);
     loadDepartmentNames();
@@ -58,7 +59,7 @@ export default function HospitalsPage() {
 
   const openEdit = (h: Hospital) => {
     setEditHospital(h);
-    setForm({ hospital_name: h.hospital_name, hospital_code: h.hospital_code, address: h.address, lga: h.lga, contact_email: h.contact_email || '', contact_phone: h.contact_phone || '' });
+    setForm({ hospital_name: h.hospital_name, hospital_code: h.hospital_code, hospital_type: h.hospital_type || '', town_city: h.town_city || '', address: h.address, lga: h.lga, contact_email: h.contact_email || '', contact_phone: h.contact_phone || '' });
     setSelectedDeptNames([]);
     setAssigningDepts(false);
     loadDepartmentNames();
@@ -166,14 +167,15 @@ export default function HospitalsPage() {
             <div className="table-wrap">
             <table>
               <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Code</th>
-                  <th>LGA</th>
-                  <th>Contact</th>
-                  <th>Status</th>
-                  <th className="text-right">Actions</th>
-                </tr>
+                  <tr>
+                    <th>Name</th>
+                    <th>Code</th>
+                    <th>Type</th>
+                    <th>LGA / Town</th>
+                    <th>Contact</th>
+                    <th>Status</th>
+                    <th className="text-right">Actions</th>
+                  </tr>
               </thead>
               <tbody>
                 {hospitals.map(h => (
@@ -183,13 +185,20 @@ export default function HospitalsPage() {
                         <div className="w-9 h-9 bg-emerald-50 rounded-lg flex items-center justify-center">
                           <Building2 size={18} className="text-[#008751]" />
                         </div>
-                        <span className="font-medium text-slate-900">{h.hospital_name}</span>
+                        <div>
+                          <button onClick={() => setProfileHospital(h)} className="font-medium text-slate-900 hover:text-[#008751] transition-colors text-left">{h.hospital_name}</button>
+                          <p className="text-[11px] text-slate-400">{h.address}</p>
+                        </div>
                       </div>
                     </td>
-                    <td className="font-mono">{h.hospital_code}</td>
-                    <td>{h.lga}</td>
+                    <td className="font-mono text-xs">{h.hospital_code}</td>
+                    <td><span className="text-sm text-slate-700">{h.hospital_type || '—'}</span></td>
                     <td>
-                      <p>{h.contact_email || '-'}</p>
+                      <p className="text-sm text-slate-700">{h.lga}</p>
+                      <p className="text-[11px] text-slate-400">{h.town_city || ''}</p>
+                    </td>
+                    <td>
+                      <p className="text-sm">{h.contact_email || '-'}</p>
                       <p className="text-xs text-slate-400">{h.contact_phone || '-'}</p>
                     </td>
                     <td>
@@ -223,26 +232,47 @@ export default function HospitalsPage() {
             </div>
             <div>
               <label className="label">Hospital Code</label>
-              <input className="input" value={form.hospital_code} onChange={e => setForm({ ...form, hospital_code: e.target.value })} required />
+              <input className="input" value={form.hospital_code} onChange={e => setForm({ ...form, hospital_code: e.target.value })} required placeholder="e.g. GSHSMB-GH-001" />
             </div>
           </div>
-          <div>
-            <label className="label">Address</label>
-            <textarea className="input" rows={2} value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} required />
-          </div>
           <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="label">Hospital Type</label>
+              <select className="input" value={form.hospital_type} onChange={e => setForm({ ...form, hospital_type: e.target.value })} required>
+                <option value="">Select type...</option>
+                <option value="General Hospital">General Hospital</option>
+                <option value="Cottage Hospital">Cottage Hospital</option>
+                <option value="Specialist Hospital">Specialist Hospital</option>
+                <option value="Clinic">Clinic</option>
+                <option value="Health Center">Health Center</option>
+                <option value="Teaching Hospital">Teaching Hospital</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
             <div>
               <label className="label">Local Government Area</label>
               <input className="input" value={form.lga} onChange={e => setForm({ ...form, lga: e.target.value })} required />
             </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="label">Contact Email</label>
-              <input type="email" className="input" value={form.contact_email} onChange={e => setForm({ ...form, contact_email: e.target.value })} />
+              <label className="label">Town/City</label>
+              <input className="input" value={form.town_city} onChange={e => setForm({ ...form, town_city: e.target.value })} required />
+            </div>
+            <div>
+              <label className="label">Address</label>
+              <input className="input" value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} required />
             </div>
           </div>
-          <div>
-            <label className="label">Contact Phone</label>
-            <input className="input" value={form.contact_phone} onChange={e => setForm({ ...form, contact_phone: e.target.value })} />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="label">Phone Number</label>
+              <input type="tel" className="input" value={form.contact_phone} onChange={e => setForm({ ...form, contact_phone: e.target.value })} required />
+            </div>
+            <div>
+              <label className="label">Email Address</label>
+              <input type="email" className="input" value={form.contact_email} onChange={e => setForm({ ...form, contact_email: e.target.value })} required />
+            </div>
           </div>
 
           {!editHospital && existingDeptNames.length > 0 && (
@@ -305,6 +335,122 @@ export default function HospitalsPage() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* Hospital Profile Modal */}
+      <Modal open={!!profileHospital} onClose={() => setProfileHospital(null)} title="" size="lg">
+        {profileHospital && (
+          <div className="space-y-6">
+            <div className="relative overflow-hidden rounded-2xl p-6 text-white"
+              style={{ background: 'linear-gradient(135deg, #001a0f 0%, #064e3b 50%, #006838 100%)' }}>
+              <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-emerald-400/10 blur-[80px] pointer-events-none" />
+              <div className="relative z-10 flex items-center gap-5">
+                <div className="w-16 h-16 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center shadow-lg ring-2 ring-white/20">
+                  <Building2 size={32} className="text-white" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-2xl font-bold tracking-tight">{profileHospital.hospital_name}</h2>
+                  <div className="flex items-center gap-3 mt-1.5">
+                    <span className="text-sm text-emerald-200/80 font-mono">{profileHospital.hospital_code}</span>
+                    <span className="w-1 h-1 rounded-full bg-emerald-500/50" />
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                      profileHospital.status === 'active' ? 'bg-emerald-400/20 text-emerald-200' : 'bg-slate-400/20 text-slate-300'
+                    }`}>{profileHospital.status}</span>
+                  </div>
+                </div>
+                <button onClick={() => setProfileHospital(null)} className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-all text-white/70 hover:text-white">
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="card border-t-2 border-t-emerald-400 shadow-sm">
+                <div className="card-header bg-gradient-to-r from-emerald-50/50 to-transparent">
+                  <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                    <Building2 size={15} className="text-emerald-600" />
+                    Hospital Info
+                  </h3>
+                </div>
+                <div className="p-5 space-y-4">
+                  <div>
+                    <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Hospital ID</p>
+                    <p className="text-sm text-slate-800 mt-1 font-mono">{profileHospital.id}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Hospital Code</p>
+                    <p className="text-sm text-slate-800 mt-1 font-mono">{profileHospital.hospital_code}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Hospital Type</p>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20 mt-1">
+                      {profileHospital.hospital_type || '—'}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Status</p>
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold mt-1 ${
+                      profileHospital.status === 'active' ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20' : 'bg-slate-100 text-slate-600 ring-1 ring-slate-400/20'
+                    }`}>{profileHospital.status}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="card border-t-2 border-t-sky-400 shadow-sm">
+                <div className="card-header bg-gradient-to-r from-sky-50/50 to-transparent">
+                  <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                    <MapPin size={15} className="text-sky-600" />
+                    Location
+                  </h3>
+                </div>
+                <div className="p-5 space-y-4">
+                  <div>
+                    <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Address</p>
+                    <p className="text-sm text-slate-800 mt-1">{profileHospital.address || '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Town/City</p>
+                    <p className="text-sm text-slate-800 mt-1">{profileHospital.town_city || '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">LGA</p>
+                    <p className="text-sm text-slate-800 mt-1">{profileHospital.lga || '—'}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="card border-t-2 border-t-violet-400 shadow-sm">
+              <div className="card-header bg-gradient-to-r from-violet-50/50 to-transparent">
+                <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                  <Phone size={15} className="text-violet-600" />
+                  Contact
+                </h3>
+              </div>
+              <div className="p-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-100">
+                    <p className="text-[10px] font-semibold text-violet-600 uppercase tracking-wide">Phone Number</p>
+                    <p className="text-lg font-bold text-violet-800 mt-1">{profileHospital.contact_phone || '—'}</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-sky-50 to-blue-50 border border-sky-100">
+                    <p className="text-[10px] font-semibold text-sky-600 uppercase tracking-wide">Email Address</p>
+                    <p className="text-lg font-bold text-sky-800 mt-1 break-all">{profileHospital.contact_email || '—'}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2 border-t border-slate-100">
+              {isAdmin && (
+                <button onClick={() => { setProfileHospital(null); openEdit(profileHospital); }} className="btn-primary">
+                  <Pencil size={15} /> Edit Profile
+                </button>
+              )}
+              <button onClick={() => setProfileHospital(null)} className="btn-secondary">Close</button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );

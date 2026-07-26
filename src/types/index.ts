@@ -317,7 +317,9 @@ export interface Hospital {
   id: string;
   hospital_name: string;
   hospital_code: string;
+  hospital_type: string;
   address: string;
+  town_city: string;
   lga: string;
   contact_email: string;
   contact_phone: string;
