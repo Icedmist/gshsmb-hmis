@@ -17,6 +17,7 @@ import {
 import { UserRole } from '../../types';
 import { getUnreadCount } from '../../lib/notifications';
 import { getUnreadMessageCount } from '../../lib/messaging';
+import { getPendingLocumCount, getOpenStaffingCount } from '../../lib/locums';
 import logoSrc from '../../assets/logo.jpeg';
 
 interface NavItem {
@@ -27,7 +28,7 @@ interface NavItem {
   color: string;
   bg: string;
   lightBg: string;
-  badgeKey?: 'notifications' | 'messages';
+  badgeKey?: string;
 }
 
 const sections: { label: string; color: string; items: NavItem[] }[] = [
@@ -46,9 +47,9 @@ const sections: { label: string; color: string; items: NavItem[] }[] = [
     label: 'Locum Management', color: '#0891b2',
     items: [
       { to: '/locum-dashboard', label: 'Locum Dashboard', icon: Briefcase, roles: ['super_admin' as UserRole, 'executive_secretary' as UserRole, 'hospital_admin' as UserRole, 'hr_officer' as UserRole, 'director_hr' as UserRole], color: '#0891b2', bg: 'from-cyan-500 to-cyan-600', lightBg: 'bg-cyan-50' },
-      { to: '/locum-requests', label: 'Locum Requests', icon: FileText, roles: ['super_admin' as UserRole, 'executive_secretary' as UserRole, 'hospital_admin' as UserRole], color: '#0e7490', bg: 'from-cyan-600 to-cyan-700', lightBg: 'bg-cyan-50' },
-      { to: '/staffing-requests', label: 'Staffing Requests', icon: Users, roles: ['super_admin' as UserRole, 'executive_secretary' as UserRole, 'hospital_admin' as UserRole], color: '#0f766e', bg: 'from-teal-600 to-teal-700', lightBg: 'bg-teal-50' },
-      { to: '/locum-assignments', label: 'Assignments', icon: ClipboardCheck, roles: ['super_admin' as UserRole, 'executive_secretary' as UserRole, 'hospital_admin' as UserRole, 'hr_officer' as UserRole, 'director_hr' as UserRole], color: '#6d28d9', bg: 'from-violet-500 to-violet-600', lightBg: 'bg-violet-50' },
+      { to: '/locum-requests', label: 'Locum Requests', icon: FileText, roles: ['hospital_admin' as UserRole], color: '#0e7490', bg: 'from-cyan-600 to-cyan-700', lightBg: 'bg-cyan-50', badgeKey: 'locum_requests' },
+      { to: '/staffing-requests', label: 'Staffing Requests', icon: Users, roles: ['hospital_admin' as UserRole], color: '#0f766e', bg: 'from-teal-600 to-teal-700', lightBg: 'bg-teal-50', badgeKey: 'staffing_requests' },
+      { to: '/locum-assignments', label: 'Assignments', icon: ClipboardCheck, roles: ['hospital_admin' as UserRole, 'hr_officer' as UserRole, 'director_hr' as UserRole], color: '#6d28d9', bg: 'from-violet-500 to-violet-600', lightBg: 'bg-violet-50' },
     ],
   },
   {
@@ -150,23 +151,25 @@ interface SidebarProps {
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const { user, hasRole } = useAuth();
-  const [badges, setBadges] = useState<Record<string, number>>({ notifications: 0, messages: 0 });
+  const [badges, setBadges] = useState<Record<string, number>>({ notifications: 0, messages: 0, locum_requests: 0, staffing_requests: 0 });
 
   useEffect(() => {
     if (!user?.id) return;
     const fetchBadges = async () => {
       try {
-        const [notifCount, msgCount] = await Promise.all([
+        const [notifCount, msgCount, locumCount, staffingCount] = await Promise.all([
           getUnreadCount(user.id),
           getUnreadMessageCount(user.id),
+          getPendingLocumCount(user.hospital_id || ''),
+          getOpenStaffingCount(),
         ]);
-        setBadges({ notifications: notifCount, messages: msgCount });
+        setBadges({ notifications: notifCount, messages: msgCount, locum_requests: locumCount, staffing_requests: staffingCount });
       } catch { /* ignore */ }
     };
     fetchBadges();
     const interval = setInterval(fetchBadges, 10000);
     return () => clearInterval(interval);
-  }, [user?.id]);
+  }, [user?.id, user?.hospital_id]);
 
   return (
     <>

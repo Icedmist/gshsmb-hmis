@@ -268,5 +268,55 @@ service cloud.firestore {
       allow read: if isAuthenticated() && request.auth.uid == resource.data.user_id;
       allow write: if isAuthenticated() && request.auth.uid == resource.data.user_id;
     }
+
+    // ─── Locum / Staffing collections ───
+
+    // Locum requests (employee-initiated)
+    match /locum_requests/{docId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
+    // Locum approvals (tracking approval steps)
+    match /locum_approvals/{docId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
+    // Locum assignments (created after full approval)
+    match /locum_assignments/{docId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
+    // Locum history (completed locums)
+    match /locum_history/{docId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
+    // Staffing requests (hospital-initiated requests for staff)
+    match /staffing_requests/{docId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
+    // Staff nominations (nominating staff for open staffing requests)
+    match /staff_nominations/{docId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
   }
 }

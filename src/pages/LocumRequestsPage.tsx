@@ -5,9 +5,13 @@ import { getLocumRequests, createLocumRequest, updateLocumRequest, cancelLocumRe
 import { getAllHospitals } from '../lib/hospitals';
 import { getEmployees } from '../lib/employees';
 import { getHospitalScope } from '../lib/scope';
+import { getHospitalAdmins } from '../lib/users';
+import { addDocument } from '../lib/firestore';
 import Modal from '../components/common/Modal';
 import Pagination from '../components/common/Pagination';
 import type { LocumRequest, LocumApproval } from '../types';
+
+const READ_ONLY_ROLES = ['super_admin', 'executive_secretary'];
 
 const STATUS_BADGES: Record<string, string> = {
   pending_hospital_admin: 'bg-cyan-50 text-cyan-700 ring-1 ring-cyan-600/20',
@@ -29,7 +33,8 @@ export default function LocumRequestsPage() {
   const [showModal, setShowModal] = useState(false);
   const [hospitals, setHospitals] = useState<{ id: string; hospital_name: string }[]>([]);
   const [form, setForm] = useState({
-    employee_id: '', employee_name: '', staff_id: '', destination_hospital_id: '',
+    employee_id: '', employee_name: '', staff_id: '', phone_number: '', email: '',
+    destination_hospital_id: '',
     department: '', position: '', reason: '', start_date: '', end_date: '',
   });
 
@@ -50,7 +55,7 @@ export default function LocumRequestsPage() {
 
   const openCreate = () => {
     loadHospitals();
-    setForm({ employee_id: user?.id || '', employee_name: user?.full_name || '', staff_id: '', destination_hospital_id: '', department: '', position: '', reason: '', start_date: '', end_date: '' });
+    setForm({ employee_id: user?.id || '', employee_name: user?.full_name || '', staff_id: '', phone_number: '', email: '', destination_hospital_id: '', department: '', position: '', reason: '', start_date: '', end_date: '' });
     setShowModal(true);
   };
 
@@ -62,12 +67,13 @@ export default function LocumRequestsPage() {
     const duration = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
     await createLocumRequest({
       employee_id: user.id, employee_name: user.full_name || '', staff_id: form.staff_id,
+      phone_number: form.phone_number, email: form.email,
       source_hospital_id: user.hospital_id || '', source_hospital_name: '',
       destination_hospital_id: form.destination_hospital_id,
       destination_hospital_name: hospitals.find(h => h.id === form.destination_hospital_id)?.hospital_name || '',
       department: form.department, position: form.position, reason: form.reason,
       start_date: form.start_date, end_date: form.end_date, duration_days: duration,
-      created_by: user.id, status: 'pending_hospital_admin', current_step: 'Source Hospital Admin',
+      created_by: user.id, status: 'pending_destination_admin', current_step: 'Destination Hospital Admin',
     });
     setShowModal(false);
     loadItems();
@@ -81,6 +87,48 @@ export default function LocumRequestsPage() {
     const nextLabel = stepLabels[currentIdx + 1] || '';
     await updateLocumRequest(req.id, { status: nextStatus, current_step: nextLabel });
     await createLocumApproval({ locum_request_id: req.id, step: req.current_step, approver_id: user?.id || '', approver_name: user?.full_name || '', action: 'approved' });
+
+    const notifyUsers = async (targetHospitalId: string, title: string, message: string) => {
+      try {
+        const admins = await getHospitalAdmins(targetHospitalId);
+        for (const admin of admins) {
+          if (admin.id === user?.id) continue;
+          await addDocument('notifications', {
+            user_id: admin.id,
+            type: 'approval_request',
+            title,
+            message,
+            link: '/locum-requests',
+            read: false,
+            created_at: new Date().toISOString(),
+          });
+        }
+      } catch { /* ignore */ }
+    };
+
+    const sendNotification = async (userId: string, title: string, message: string) => {
+      if (userId === user?.id) return;
+      try {
+        await addDocument('notifications', {
+          user_id: userId,
+          type: 'approval_request',
+          title,
+          message,
+          link: '/locum-requests',
+          read: false,
+          created_at: new Date().toISOString(),
+        });
+      } catch { /* ignore */ }
+    };
+
+    if (nextStatus === 'pending_destination_admin') {
+      await notifyUsers(
+        req.destination_hospital_id,
+        'Locum Request Ready for Approval',
+        `${req.employee_name}'s locum request from ${req.source_hospital_name} is awaiting your approval.`,
+      );
+    }
+
     if (nextStatus === 'approved') {
       await createLocumAssignment({
         locum_request_id: req.id, employee_id: req.employee_id, employee_name: req.employee_name,
@@ -90,6 +138,16 @@ export default function LocumRequestsPage() {
         position: req.position, start_date: req.start_date, end_date: req.end_date,
         duration_days: req.duration_days, created_by: user?.id || '', status: 'active',
       });
+      await notifyUsers(
+        req.source_hospital_id,
+        'Locum Request Approved',
+        `The locum request for ${req.employee_name} to ${req.destination_hospital_name} has been fully approved.`,
+      );
+      await sendNotification(
+        req.created_by,
+        'Your Locum Request is Approved',
+        `Your locum request to ${req.destination_hospital_name} has been fully approved.`,
+      );
     }
     loadItems();
   };
@@ -97,6 +155,44 @@ export default function LocumRequestsPage() {
   const handleReject = async (req: LocumRequest) => {
     await updateLocumRequest(req.id, { status: 'rejected' });
     await createLocumApproval({ locum_request_id: req.id, step: req.current_step, approver_id: user?.id || '', approver_name: user?.full_name || '', action: 'rejected' });
+
+    const sendNotification = async (userId: string, title: string, message: string) => {
+      if (userId === user?.id) return;
+      try {
+        await addDocument('notifications', {
+          user_id: userId,
+          type: 'approval_request',
+          title,
+          message,
+          link: '/locum-requests',
+          read: false,
+          created_at: new Date().toISOString(),
+        });
+      } catch { /* ignore */ }
+    };
+
+    try {
+      const admins = await getHospitalAdmins(req.source_hospital_id);
+      for (const admin of admins) {
+        if (admin.id === user?.id) continue;
+        await addDocument('notifications', {
+          user_id: admin.id,
+          type: 'approval_request',
+          title: 'Locum Request Rejected',
+          message: `The locum request for ${req.employee_name} to ${req.destination_hospital_name} has been rejected.`,
+          link: '/locum-requests',
+          read: false,
+          created_at: new Date().toISOString(),
+        });
+      }
+    } catch { /* ignore */ }
+
+    await sendNotification(
+      req.created_by,
+      'Your Locum Request was Rejected',
+      `Your locum request to ${req.destination_hospital_name} has been rejected.`,
+    );
+
     loadItems();
   };
 
@@ -108,7 +204,7 @@ export default function LocumRequestsPage() {
 
   const canApprove = (req: LocumRequest) => {
     const role = user?.role;
-    if (role === 'super_admin' || role === 'executive_secretary') return true;
+    if (READ_ONLY_ROLES.includes(role || '')) return false;
     if (req.status === 'pending_hospital_admin' && role === 'hospital_admin' && req.source_hospital_id === user?.hospital_id) return true;
     if (req.status === 'pending_destination_admin' && role === 'hospital_admin' && req.destination_hospital_id === user?.hospital_id) return true;
     return false;
@@ -156,7 +252,9 @@ export default function LocumRequestsPage() {
           </div>
           <button onClick={() => loadItems()} className="btn-secondary text-sm">Search</button>
         </div>
-        <button onClick={openCreate} className="btn-primary"><Plus size={16} /> New Locum Request</button>
+        {!READ_ONLY_ROLES.includes(user?.role || '') && (
+          <button onClick={openCreate} className="btn-primary"><Plus size={16} /> New Locum Request</button>
+        )}
       </div>
 
       {/* Table */}
@@ -195,6 +293,13 @@ export default function LocumRequestsPage() {
                         <div>
                           <p className="font-semibold text-slate-800">{r.employee_name}</p>
                           <p className="text-[11px] text-slate-400">{r.position}</p>
+                          {(r.phone_number || r.email) && (
+                            <p className="text-[10px] text-slate-400 mt-0.5">
+                              {r.phone_number && <span>{r.phone_number}</span>}
+                              {r.phone_number && r.email && <span> · </span>}
+                              {r.email && <span>{r.email}</span>}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -224,15 +329,15 @@ export default function LocumRequestsPage() {
                       <div className="flex items-center justify-end gap-1">
                         {canApprove(r) && (
                           <>
-                            <button onClick={() => handleApprove(r)} className="p-1.5 rounded-lg hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 transition-all" title={r.status === 'pending_destination_admin' ? 'Final Approve' : 'Approve & Forward'}>
-                              <CheckCircle size={15} />
+                            <button onClick={() => handleApprove(r)} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-xs font-semibold transition-all ring-1 ring-emerald-600/30">
+                              <CheckCircle size={14} /> Accept
                             </button>
-                            <button onClick={() => handleReject(r)} className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-all" title="Reject">
-                              <XCircle size={15} />
+                            <button onClick={() => handleReject(r)} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 text-xs font-semibold transition-all ring-1 ring-red-600/30">
+                              <XCircle size={14} /> Reject
                             </button>
                           </>
                         )}
-                        {r.status === 'pending_hospital_admin' && r.created_by === user?.id && (
+                        {['pending_hospital_admin', 'pending_destination_admin'].includes(r.status) && r.created_by === user?.id && (
                           <button onClick={() => handleCancel(r.id)} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-all" title="Cancel">
                             <Trash2 size={15} />
                           </button>
@@ -253,6 +358,10 @@ export default function LocumRequestsPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div><label className="label">Employee Name</label><input className="input bg-slate-50" value={user?.full_name || ''} disabled /></div>
           <div><label className="label">Staff ID</label><input className="input" value={form.staff_id} onChange={e => setForm({ ...form, staff_id: e.target.value })} placeholder="e.g. GSH/STF/001" /></div>
+          <div className="grid grid-cols-2 gap-4">
+            <div><label className="label">Phone Number</label><input type="tel" className="input" value={form.phone_number} onChange={e => setForm({ ...form, phone_number: e.target.value })} placeholder="e.g. 0244123456" /></div>
+            <div><label className="label">Email</label><input type="email" className="input" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="e.g. name@hospital.com" /></div>
+          </div>
           <div><label className="label">Destination Hospital</label>
             <select className="input" value={form.destination_hospital_id} onChange={e => setForm({ ...form, destination_hospital_id: e.target.value })} required>
               <option value="">Select hospital...</option>

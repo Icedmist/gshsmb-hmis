@@ -54,6 +54,12 @@ export default function MessagesPage() {
   }, [tab, user]);
 
   useEffect(() => {
+    (async () => {
+      try { const d = await getAllHospitals(); setHospitals((d || []).map(h => ({ id: h.id, hospital_name: h.hospital_name }))); } catch {}
+    })();
+  }, []);
+
+  useEffect(() => {
     if (!user || threads.length === 0) { setUnreadCounts({}); return; }
     const compute = async () => {
       const counts: Record<string, number> = {};
@@ -97,6 +103,8 @@ export default function MessagesPage() {
         thread_id: selectedThread.id,
         sender_id: user.id,
         sender_name: user.full_name,
+        sender_hospital_id: user.hospital_id || undefined,
+        sender_hospital_name: hospitals.find(h => h.id === user.hospital_id)?.hospital_name,
         content: newMessage.trim(),
         read_by: [user.id],
       });
@@ -129,6 +137,8 @@ export default function MessagesPage() {
         thread_id: threadId,
         sender_id: user.id,
         sender_name: user.full_name,
+        sender_hospital_id: user.hospital_id || undefined,
+        sender_hospital_name: hospitals.find(h => h.id === user.hospital_id)?.hospital_name,
         content: hospitalMsgForm.content.trim(),
         read_by: [user.id],
       });
@@ -159,6 +169,8 @@ export default function MessagesPage() {
         thread_id: threadId,
         sender_id: user.id,
         sender_name: user.full_name,
+        sender_hospital_id: user.hospital_id || undefined,
+        sender_hospital_name: hospitals.find(h => h.id === user.hospital_id)?.hospital_name,
         content: contactAdminForm.content.trim(),
         read_by: [user.id],
       });
@@ -232,13 +244,12 @@ export default function MessagesPage() {
         </div>
         {tab === 'messages' && (
           <div className="flex gap-2">
-            {isSuperAdmin ? (
-              <button onClick={async () => {
-                try { const d = await getAllHospitals(); setHospitals((d || []).map(h => ({ id: h.id, hospital_name: h.hospital_name }))); } catch {}
-                setHospitalMsgForm({ hospital_id: '', subject: '', content: '' });
-                setShowMessageHospital(true);
-              }} className="btn-secondary"><Building2 size={16} /> Message Hospital</button>
-            ) : (
+            <button onClick={async () => {
+              try { const d = await getAllHospitals(); setHospitals((d || []).map(h => ({ id: h.id, hospital_name: h.hospital_name }))); } catch {}
+              setHospitalMsgForm({ hospital_id: '', subject: '', content: '' });
+              setShowMessageHospital(true);
+            }} className="btn-secondary"><Building2 size={16} /> Message a Hospital</button>
+            {!isSuperAdmin && (
               <button onClick={() => { setContactAdminForm({ subject: '', content: '' }); setShowContactAdmin(true); }} className="btn-secondary"><Users size={16} /> Contact Admin</button>
             )}
           </div>
@@ -378,7 +389,10 @@ export default function MessagesPage() {
                                 : 'bg-slate-100 text-slate-800 rounded-bl-sm'
                             }`}>
                               {!isMine && m.sender_name && (
-                                <p className="text-[11px] font-medium opacity-70 mb-1">{m.sender_name}</p>
+                                <p className="text-[11px] font-medium opacity-70 mb-1">
+                                  {m.sender_name}
+                                  {m.sender_hospital_name && <span className="opacity-60"> · {m.sender_hospital_name}</span>}
+                                </p>
                               )}
                               <p className="text-sm whitespace-pre-wrap">{m.content}</p>
                             </div>

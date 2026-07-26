@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Users, Plus, Search, ChevronDown, CheckCircle, XCircle, AlertTriangle, ArrowUpRight } from 'lucide-react';
+import { Users, Plus, ChevronDown, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getStaffingRequests, createStaffingRequest, updateStaffingRequest, getNominations, createNomination, updateNomination, createLocumAssignment } from '../lib/locums';
-import { getAllHospitals } from '../lib/hospitals';
+import { getAllHospitals, getHospital } from '../lib/hospitals';
 import { getEmployees } from '../lib/employees';
-import { getHospitalScope } from '../lib/scope';
+import { addDocument, getDocsPaginated } from '../lib/firestore';
 import Modal from '../components/common/Modal';
 import Pagination from '../components/common/Pagination';
 import type { StaffingRequest, StaffNomination } from '../types';
@@ -25,7 +25,6 @@ const STATUS_BADGES: Record<string, string> = {
 
 export default function StaffingRequestsPage() {
   const { user, hasRole } = useAuth();
-  const hospitalScope = getHospitalScope(user);
   const [items, setItems] = useState<StaffingRequest[]>([]);
   const [pagination, setPagination] = useState({ page: 1, limit: 50, total: 0, totalPages: 0 });
   const [loading, setLoading] = useState(true);
@@ -37,22 +36,25 @@ export default function StaffingRequestsPage() {
     start_date: '', end_date: '',
   });
   const [hospitals, setHospitals] = useState<{ id: string; hospital_name: string }[]>([]);
-  const [employees, setEmployees] = useState<{ id: string; full_name: string; staff_id: string }[]>([]);
+  const [employees, setEmployees] = useState<{ id: string; full_name: string; staff_id: string; phone_number?: string; email?: string; position?: string }[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<StaffingRequest | null>(null);
   const [nominations, setNominations] = useState<StaffNomination[]>([]);
   const [showNominateModal, setShowNominateModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileStaff, setProfileStaff] = useState<StaffNomination | null>(null);
   const [nomineeId, setNomineeId] = useState('');
+  const [hospitalNames, setHospitalNames] = useState<Record<string, string>>({});
 
   const loadItems = async (page = 1) => {
     setLoading(true);
     try {
-      const { data, total } = await getStaffingRequests(page, 50, hospitalScope, statusFilter || undefined);
+      const { data, total } = await getStaffingRequests(page, 50, undefined, statusFilter || undefined);
       setItems(data);
       setPagination({ page, limit: 50, total, totalPages: Math.ceil(total / 50) });
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { loadItems(); }, [statusFilter, hospitalScope]);
+  useEffect(() => { loadItems(); }, [statusFilter]);
 
   const openCreate = () => {
     setForm({ profession: '', specialty: '', staff_needed: 1, department: '', reason: '', duration_days: 7, priority: 'normal', start_date: '', end_date: '' });
@@ -62,8 +64,13 @@ export default function StaffingRequestsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    let hospital_name = '';
+    try {
+      const hosp = await getHospital(user.hospital_id || '');
+      if (hosp) hospital_name = hosp.hospital_name;
+    } catch {}
     await createStaffingRequest({
-      hospital_id: user.hospital_id || '', hospital_name: '',
+      hospital_id: user.hospital_id || '', hospital_name,
       profession: form.profession, specialty: form.specialty,
       staff_needed: form.staff_needed, department: form.department,
       reason: form.reason, duration_days: form.duration_days,
@@ -74,32 +81,80 @@ export default function StaffingRequestsPage() {
     loadItems();
   };
 
+  const isMyRequest = (req: StaffingRequest) => req.hospital_id === user?.hospital_id;
+
   const openNominations = async (req: StaffingRequest) => {
     setSelectedRequest(req);
     const noms = await getNominations(req.id);
     setNominations(noms);
     try {
       const d = await getAllHospitals();
-      setHospitals((d || []).map(h => ({ id: h.id, hospital_name: h.hospital_name })));
-      const empRes = await getEmployees(1, 200);
-      setEmployees(empRes.data.map((e: any) => ({ id: e.id, full_name: e.full_name, staff_id: e.staff_id })));
+      const nameMap: Record<string, string> = {};
+      const hospList = (d || []).map(h => { nameMap[h.id] = h.hospital_name; return { id: h.id, hospital_name: h.hospital_name }; });
+      setHospitals(hospList);
+      setHospitalNames(nameMap);
+      const empRes = await getEmployees(1, 200, undefined, user?.hospital_id || undefined);
+      setEmployees(empRes.data.map((e: any) => ({ id: e.id, full_name: e.full_name, staff_id: e.staff_id, phone_number: e.phone_number, email: e.email, position: e.position })));
     } catch {}
     setShowNominateModal(true);
   };
 
-  const handleNominate = async () => {
+  const handleAddStaff = async () => {
     if (!selectedRequest || !nomineeId || !user) return;
     const emp = employees.find(e => e.id === nomineeId);
     if (!emp) return;
     await createNomination({
       staffing_request_id: selectedRequest.id,
       employee_id: emp.id, employee_name: emp.full_name, staff_id: emp.staff_id,
-      source_hospital_id: user.hospital_id || '', source_hospital_name: '',
+      phone_number: emp.phone_number, email: emp.email, position: emp.position,
+      source_hospital_id: user.hospital_id || '',
+      source_hospital_name: hospitalNames[user.hospital_id || ''] || '',
       nominated_by: user.id, nominated_by_name: user.full_name || '', status: 'pending',
     });
+
+    try {
+      const { data: admins } = await getDocsPaginated('users', [
+        { field: 'role', op: '==', value: 'hospital_admin' },
+        { field: 'hospital_id', op: '==', value: selectedRequest.hospital_id },
+      ], undefined, 100, 1);
+      for (const admin of admins) {
+        if (admin.id === user.id) continue;
+        await addDocument('notifications', {
+          user_id: admin.id,
+          type: 'approval_request',
+          title: 'Staff Offered',
+          message: `${emp.full_name} (${emp.staff_id}) from ${hospitalNames[user.hospital_id || ''] || 'Your hospital'} has been offered for ${selectedRequest.profession} position.`,
+          link: '/staffing-requests',
+          read: false,
+          created_at: new Date().toISOString(),
+        });
+      }
+    } catch { /* ignore */ }
+
     const noms = await getNominations(selectedRequest.id);
     setNominations(noms);
     setNomineeId('');
+  };
+
+  const notifyNominationAction = async (nom: StaffNomination, action: 'approved' | 'rejected') => {
+    try {
+      const { data: admins } = await getDocsPaginated('users', [
+        { field: 'role', op: '==', value: 'hospital_admin' },
+        { field: 'hospital_id', op: '==', value: nom.source_hospital_id },
+      ], undefined, 100, 1);
+      for (const admin of admins) {
+        if (admin.id === user?.id) continue;
+        await addDocument('notifications', {
+          user_id: admin.id,
+          type: 'approval_request',
+          title: `Staff Nomination ${action === 'approved' ? 'Accepted' : 'Rejected'}`,
+          message: `The nomination of ${nom.employee_name} for ${selectedRequest?.profession || 'a staffing request'} has been ${action}${selectedRequest ? ` by ${selectedRequest.hospital_name || selectedRequest.hospital_id}` : ''}.`,
+          link: '/staffing-requests',
+          read: false,
+          created_at: new Date().toISOString(),
+        });
+      }
+    } catch { /* ignore */ }
   };
 
   const handleApproveNomination = async (nom: StaffNomination) => {
@@ -118,6 +173,7 @@ export default function StaffingRequestsPage() {
         start_date: selectedRequest.start_date, end_date: selectedRequest.end_date,
         duration_days: selectedRequest.duration_days, created_by: user?.id || '', status: 'active',
       });
+      await notifyNominationAction(nom, 'approved');
     }
     const noms = await getNominations(selectedRequest!.id);
     setNominations(noms);
@@ -126,11 +182,12 @@ export default function StaffingRequestsPage() {
 
   const handleRejectNomination = async (nom: StaffNomination) => {
     await updateNomination(nom.id, { status: 'rejected' });
+    await notifyNominationAction(nom, 'rejected');
     const noms = await getNominations(selectedRequest!.id);
     setNominations(noms);
   };
 
-  const canNominate = hasRole('hospital_admin', 'super_admin', 'executive_secretary');
+  const canAddStaff = hasRole('hospital_admin', 'super_admin', 'executive_secretary');
   const canApproveNomination = (req: StaffingRequest) => (user?.role === 'hospital_admin' && req.hospital_id === user?.hospital_id) || hasRole('super_admin', 'executive_secretary');
 
   return (
@@ -169,7 +226,7 @@ export default function StaffingRequestsPage() {
             <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
           </div>
         </div>
-        {canNominate && <button onClick={openCreate} className="btn-primary"><Plus size={16} /> New Request</button>}
+        {canAddStaff && <button onClick={openCreate} className="btn-primary"><Plus size={16} /> New Request</button>}
       </div>
 
       {/* Table */}
@@ -237,9 +294,14 @@ export default function StaffingRequestsPage() {
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex items-center justify-end gap-1">
-                        {r.status === 'open' && canNominate && (
+                        {r.status === 'open' && isMyRequest(r) && (
+                          <button onClick={() => openNominations(r)} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-xs font-semibold transition-all ring-1 ring-indigo-600/20">
+                            <Users size={12} /> View Offers
+                          </button>
+                        )}
+                        {r.status === 'open' && !isMyRequest(r) && canAddStaff && (
                           <button onClick={() => openNominations(r)} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-teal-50 text-teal-700 hover:bg-teal-100 text-xs font-semibold transition-all ring-1 ring-teal-600/20">
-                            <Users size={12} /> Nominate
+                            <Users size={12} /> Add Staff
                           </button>
                         )}
                       </div>
@@ -285,53 +347,113 @@ export default function StaffingRequestsPage() {
       </Modal>
 
       {/* Nomination Modal */}
-      <Modal open={showNominateModal} onClose={() => setShowNominateModal(false)} title={`Nominate Staff — ${selectedRequest?.profession || ''}`} size="lg">
-        <div className="space-y-4">
-          <div className="flex gap-2">
-            <select className="input flex-1" value={nomineeId} onChange={e => setNomineeId(e.target.value)}>
-              <option value="">Select employee...</option>
-              {employees.map(e => <option key={e.id} value={e.id}>{e.full_name} ({e.staff_id})</option>)}
-            </select>
-            <button onClick={handleNominate} disabled={!nomineeId} className="btn-primary">Nominate</button>
-          </div>
-          <div className="border-t border-slate-100 pt-3">
-            <h4 className="text-sm font-semibold text-slate-700 mb-2">Nominations</h4>
-            {nominations.length === 0 ? <p className="text-xs text-slate-400 py-4 text-center">No nominations yet.</p> : (
-              <div className="space-y-2">
-                {nominations.map(n => (
-                  <div key={n.id} className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-slate-50 to-transparent border border-slate-100">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center text-white font-bold text-xs">
-                        {n.employee_name.charAt(0)}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-slate-800">{n.employee_name}</p>
-                        <p className="text-[10px] text-slate-400">from {n.source_hospital_name}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${
-                        n.status === 'approved' ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20' :
-                        n.status === 'rejected' ? 'bg-red-50 text-red-700 ring-1 ring-red-600/20' :
-                        'bg-amber-50 text-amber-700 ring-1 ring-amber-600/20'
-                      }`}>{n.status}</span>
-                      {n.status === 'pending' && canApproveNomination(selectedRequest) && (
-                        <>
-                          <button onClick={() => handleApproveNomination(n)} className="p-1.5 rounded-lg hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 transition-all" title="Approve">
-                            <CheckCircle size={14} />
-                          </button>
-                          <button onClick={() => handleRejectNomination(n)} className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-all" title="Reject">
-                            <XCircle size={14} />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ))}
+      {selectedRequest && (
+        <Modal open={showNominateModal} onClose={() => setShowNominateModal(false)}
+          title={isMyRequest(selectedRequest) ? `Staff Offers — ${selectedRequest.profession}` : `Add Staff — ${selectedRequest.profession}`}
+          size="lg">
+          <div className="space-y-4">
+            {!isMyRequest(selectedRequest) && (
+              <div className="flex gap-2">
+                <select className="input flex-1" value={nomineeId} onChange={e => setNomineeId(e.target.value)}>
+                  <option value="">Select your staff...</option>
+                  {employees.map(e => <option key={e.id} value={e.id}>{e.full_name} ({e.staff_id})</option>)}
+                </select>
+                <button onClick={handleAddStaff} disabled={!nomineeId} className="btn-primary">Offer Staff</button>
               </div>
             )}
+            <div className="border-t border-slate-100 pt-3">
+              <h4 className="text-sm font-semibold text-slate-700 mb-2">
+                {isMyRequest(selectedRequest) ? 'All Offered Staff' : 'Your Offered Staff'}
+              </h4>
+              {nominations.length === 0 ? (
+                <p className="text-xs text-slate-400 py-4 text-center">No staff offered yet.</p>
+              ) : (
+                <div className="space-y-2 max-h-80 overflow-y-auto">
+                  {nominations
+                    .filter(n => isMyRequest(selectedRequest) ? true : n.source_hospital_id === user?.hospital_id)
+                    .map(n => (
+                    <div key={n.id} className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-slate-50 to-transparent border border-slate-100">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center text-white font-bold text-xs">
+                          {n.employee_name.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-slate-800">{n.employee_name}</p>
+                          <p className="text-[10px] text-slate-400">from {n.source_hospital_name}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${
+                          n.status === 'approved' ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20' :
+                          n.status === 'rejected' ? 'bg-red-50 text-red-700 ring-1 ring-red-600/20' :
+                          'bg-amber-50 text-amber-700 ring-1 ring-amber-600/20'
+                        }`}>{n.status === 'approved' ? 'Nominated' : n.status === 'rejected' ? 'Declined' : 'Offered'}</span>
+                        {isMyRequest(selectedRequest) && (
+                          <button onClick={() => { setProfileStaff(n); setShowProfileModal(true); }} className="p-1.5 rounded-lg hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 transition-all" title="View Profile">
+                            <Users size={13} />
+                          </button>
+                        )}
+                        {isMyRequest(selectedRequest) && n.status === 'pending' && (
+                          <>
+                            <button onClick={() => handleApproveNomination(n)} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-xs font-semibold transition-all ring-1 ring-emerald-600/30">
+                              <CheckCircle size={13} /> Nominate
+                            </button>
+                            <button onClick={() => handleRejectNomination(n)} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 text-xs font-semibold transition-all ring-1 ring-red-600/30">
+                              <XCircle size={13} /> Decline
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        </Modal>
+      )}
+
+      {/* Staff Profile Modal */}
+      <Modal open={showProfileModal} onClose={() => setShowProfileModal(false)} title="Staff Profile" size="md">
+        {profileStaff && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-4 pb-4 border-b border-slate-100">
+              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center text-white font-bold text-lg shadow-sm">
+                {profileStaff.employee_name.charAt(0)}
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-800">{profileStaff.employee_name}</h3>
+                <p className="text-sm text-slate-400">{profileStaff.position || '—'}</p>
+                <p className="text-xs text-slate-400">From {profileStaff.source_hospital_name}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Staff ID</p>
+                <p className="text-sm text-slate-800 mt-0.5">{profileStaff.staff_id || '—'}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Phone Number</p>
+                <p className="text-sm text-slate-800 mt-0.5">{profileStaff.phone_number || '—'}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Email</p>
+                <p className="text-sm text-slate-800 mt-0.5">{profileStaff.email || '—'}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Status</p>
+                <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold mt-0.5 ${
+                  profileStaff.status === 'approved' ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20' :
+                  profileStaff.status === 'rejected' ? 'bg-red-50 text-red-700 ring-1 ring-red-600/20' :
+                  'bg-amber-50 text-amber-700 ring-1 ring-amber-600/20'
+                }`}>{profileStaff.status === 'approved' ? 'Nominated' : profileStaff.status === 'rejected' ? 'Declined' : 'Offered'}</span>
+              </div>
+            </div>
+            <div className="flex justify-end pt-3 border-t border-slate-100">
+              <button onClick={() => setShowProfileModal(false)} className="btn-secondary text-sm">Close</button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );

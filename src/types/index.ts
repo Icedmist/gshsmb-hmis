@@ -1091,6 +1091,8 @@ export interface Message {
   thread_id: string;
   sender_id: string;
   sender_name?: string;
+  sender_hospital_id?: string;
+  sender_hospital_name?: string;
   content: string;
   attachments?: { name: string; url: string }[];
   read_by: string[];
@@ -1241,6 +1243,8 @@ export interface LocumRequest {
   employee_id: string;
   employee_name: string;
   staff_id: string;
+  phone_number?: string;
+  email?: string;
   source_hospital_id: string;
   source_hospital_name: string;
   destination_hospital_id: string;
@@ -1284,6 +1288,9 @@ export interface StaffNomination {
   employee_id: string;
   employee_name: string;
   staff_id: string;
+  phone_number?: string;
+  email?: string;
+  position?: string;
   source_hospital_id: string;
   source_hospital_name: string;
   nominated_by: string;
