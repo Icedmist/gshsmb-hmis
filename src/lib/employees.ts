@@ -1,7 +1,6 @@
 import { collection, query, where, getDocs, limit as firestoreLimit } from 'firebase/firestore';
 import { db } from './firebase';
-import { getDocById, getDocsPaginated, addDocument, updateDocument, deleteDocument, countDocs, type FilterConstraint, type PaginationResult } from './firestore';
-import { Timestamp } from 'firebase/firestore';
+import { getDocById, getDocsPaginated, addDocument, updateDocument, deleteDocument, type FilterConstraint, type PaginationResult } from './firestore';
 import type { Employee } from '../types';
 
 const enrichEmployee = async (e: any): Promise<any> => {

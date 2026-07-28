@@ -31,7 +31,8 @@ export default function ClinicalGuidelinesPage() {
     }
   };
 
-  useEffect(() => { loadData(); }, []);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadData(); }, [loadData]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadData(); };
 

@@ -4,13 +4,12 @@ import { useAuth } from '../../contexts/AuthContext';
 import {
   LayoutDashboard, Building2, Building, Users,
   Shield, ClipboardList, Settings, X,
-  ArrowRight, ArrowRightLeft, FileText, ChevronRight, Sparkles,
-  Stethoscope, Activity, AlertTriangle, Heart,
+  ArrowRight, ArrowRightLeft, FileText, ChevronRight,   Stethoscope, Activity, AlertTriangle, Heart,
   GraduationCap, Target, BarChart3, TrendingUp,
   BookOpen, Pill, FlaskConical, Thermometer,
-  Wrench, Syringe, AlertCircle, Microscope,
+  Wrench, Syringe, Microscope,
   ClipboardCheck, Award, DollarSign, Wallet,
-  PiggyBank, CreditCard, Briefcase, Landmark,
+  PiggyBank, Briefcase, Landmark,
   Scale, TrendingDown,
   Bell, ListTodo, MessageSquare,
 } from 'lucide-react';

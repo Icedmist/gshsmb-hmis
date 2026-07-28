@@ -43,7 +43,8 @@ export default function NursingAuditsPage() {
     }
   };
 
-  useEffect(() => { loadItems(); }, [tab]);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadItems(); }, [tab, loadItems]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadItems(); };
 

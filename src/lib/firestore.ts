@@ -11,8 +11,6 @@ import {
   where,
   orderBy,
   limit as firestoreLimit,
-  startAfter,
-  count,
   Timestamp,
   DocumentData,
   QueryConstraint,

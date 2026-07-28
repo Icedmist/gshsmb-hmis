@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { getBudgets, createBudget, updateBudget, deleteBudget, getBudgetItems, createBudgetItem, updateBudgetItem, deleteBudgetItem } from '../lib/finance';
+import { getBudgets, createBudget, updateBudget, deleteBudget, getBudgetItems, createBudgetItem } from '../lib/finance';
 import { getAllHospitals } from '../lib/hospitals';
 import { useAuth } from '../contexts/AuthContext';
-import { PiggyBank, Plus, Edit3, Trash2, ChevronDown, ChevronUp, DollarSign, Building2, ArrowUpRight } from 'lucide-react';
-import type { Budget } from '../types';
+import { PiggyBank, Plus, Edit3, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 
 export default function BudgetManagementPage() {
   const { user } = useAuth();
@@ -29,7 +27,8 @@ export default function BudgetManagementPage() {
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, [load]);
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();

@@ -1,4 +1,4 @@
-import { getDocById, getDocsPaginated, updateDocument, addDocument, type FilterConstraint, type PaginationResult } from './firestore';
+import { getDocById, getDocsPaginated, updateDocument, type FilterConstraint, type PaginationResult } from './firestore';
 import type { EmployeeTransfer } from '../types';
 
 const enrichTransfer = async (t: any): Promise<any> => {

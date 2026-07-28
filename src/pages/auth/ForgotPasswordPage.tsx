@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { resetUserPassword } from '../../lib/auth';
-import { Shield, Scale, ArrowLeft, CheckCircle2, Mail, Lock, Sparkles, Fingerprint } from 'lucide-react';
+import { Shield, Scale, ArrowLeft, CheckCircle2, Mail } from 'lucide-react';
 import logo from '../../assets/logo.jpeg';
 
 export default function ForgotPasswordPage() {

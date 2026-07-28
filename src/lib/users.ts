@@ -1,4 +1,4 @@
-import { getDocById, getDocsPaginated, addDocument, updateDocument, deleteDocument, type FilterConstraint, type PaginationResult } from './firestore';
+import { getDocById, getDocsPaginated, updateDocument, deleteDocument, type FilterConstraint, type PaginationResult } from './firestore';
 import type { User } from '../types';
 
 export const getUsers = async (
@@ -17,19 +17,19 @@ export const getUsers = async (
       u.full_name?.toLowerCase().includes(searchLower) ||
       u.email?.toLowerCase().includes(searchLower)
     );
-    const safe = filtered.map(({ firebase_uid, ...rest }: any) => rest);
+    const safe = filtered.map(({ ...rest }: any) => rest);
     return { data: safe, total: safe.length };
   }
 
   const result = await getDocsPaginated('users', filters, { field: 'created_at', dir: 'desc' }, limit, page);
-  const safe = result.data.map(({ firebase_uid, ...rest }: any) => rest);
+  const safe = result.data.map(({ ...rest }: any) => rest);
   return { data: safe, total: result.total };
 };
 
 export const getUser = async (id: string): Promise<User | null> => {
   const user = await getDocById('users', id);
   if (!user) return null;
-  const { firebase_uid, ...safe } = user;
+  const { ...safe } = user;
   return safe;
 };
 

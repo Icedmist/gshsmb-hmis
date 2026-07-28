@@ -3,7 +3,7 @@ import { Pagination as PaginationType } from '../types';
 import Modal from '../components/common/Modal';
 import Pagination from '../components/common/Pagination';
 import { useAuth } from '../contexts/AuthContext';
-import { Plus, Search, Pencil, Trash2, Beaker, Building2, Package, AlertTriangle, Thermometer } from 'lucide-react';
+import { Plus, Search, Pencil, Beaker, Building2, Package, AlertTriangle } from 'lucide-react';
 import StatCard from '../components/common/StatCard';
 import { getLaboratoryReagents, createLaboratoryReagent, updateLaboratoryReagent } from '../lib/laboratory';
 import { getAllHospitals } from '../lib/hospitals';
@@ -33,7 +33,8 @@ export default function ReagentsPage() {
     }
   };
 
-  useEffect(() => { loadData(); }, []);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadData(); }, [loadData]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadData(); };
 

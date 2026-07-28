@@ -23,6 +23,7 @@ export default function RevenueManagementPage() {
     setLoading(false);
   };
 
+// eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, []);
 
   const handleSubmit = async (e: any) => {

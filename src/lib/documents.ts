@@ -1,5 +1,5 @@
-import { addDocument, getDocsPaginated, updateDocument, deleteDocument, getDocById, getDocsAll } from './firestore';
-import type { Document, DocumentCategory, DocumentVersion, DocumentType } from '../types';
+import { addDocument, getDocsPaginated, updateDocument as firestoreUpdate, deleteDocument as firestoreDelete, getDocById } from './firestore';
+import type { Document, DocumentCategory, DocumentVersion } from '../types';
 
 export const getDocuments = async (
   page = 1, limit = 50, search?: string,
@@ -35,11 +35,11 @@ export const createDocument = async (data: Omit<Document, 'id' | 'created_at' | 
 };
 
 export const updateDocument = async (id: string, data: Partial<Document>): Promise<void> => {
-  await updateDocument('documents', id, data);
+  await firestoreUpdate('documents', id, data);
 };
 
 export const deleteDocument = async (id: string): Promise<void> => {
-  await deleteDocument('documents', id);
+  await firestoreDelete('documents', id);
 };
 
 export const getDocumentCategories = async (): Promise<DocumentCategory[]> => {
@@ -52,7 +52,7 @@ export const createDocumentCategory = async (data: Omit<DocumentCategory, 'id' |
 };
 
 export const deleteDocumentCategory = async (id: string): Promise<void> => {
-  await deleteDocument('document_categories', id);
+  await firestoreDelete('document_categories', id);
 };
 
 export const getDocumentVersions = async (documentId: string): Promise<DocumentVersion[]> => {
@@ -65,9 +65,9 @@ export const createDocumentVersion = async (data: Omit<DocumentVersion, 'id' | '
 };
 
 export const archiveDocument = async (id: string): Promise<void> => {
-  await updateDocument('documents', id, { status: 'archived' });
+  await firestoreUpdate('documents', id, { status: 'archived' });
 };
 
 export const publishDocument = async (id: string): Promise<void> => {
-  await updateDocument('documents', id, { status: 'published' });
+  await firestoreUpdate('documents', id, { status: 'published' });
 };

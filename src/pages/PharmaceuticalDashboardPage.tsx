@@ -22,10 +22,6 @@ export default function PharmaceuticalDashboardPage() {
   const [recentMedicines, setRecentMedicines] = useState<any[]>([]);
   const [recentAudits, setRecentAudits] = useState<any[]>([]);
 
-  useEffect(() => {
-    loadDashboard();
-  }, []);
-
   const loadDashboard = async () => {
     setLoading(true);
     try {
@@ -59,6 +55,10 @@ export default function PharmaceuticalDashboardPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadDashboard();
+  }, []);
 
   if (loading) {
     return (

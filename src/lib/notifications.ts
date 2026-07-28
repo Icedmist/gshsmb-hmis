@@ -1,8 +1,9 @@
-import { addDocument, getDocsPaginated, updateDocument, deleteDocument, getDocById } from './firestore';
+import { addDocument, getDocsPaginated, updateDocument, deleteDocument } from './firestore';
+import type { FilterConstraint } from './firestore';
 import type { Notification, NotificationSetting } from '../types';
 
 export const getNotifications = async (userId: string, page = 1, limit = 50, unreadOnly = false): Promise<{ data: Notification[]; total: number; unread: number }> => {
-  const filters = [{ field: 'user_id', op: '==' as const, value: userId }];
+  const filters: FilterConstraint[] = [{ field: 'user_id', op: '==', value: userId }];
   if (unreadOnly) filters.push({ field: 'read', op: '==' as const, value: false });
   const result = await getDocsPaginated('notifications', filters, { field: 'created_at', dir: 'desc' as const }, limit, page);
   const unreadResult = await getDocsPaginated('notifications', [{ field: 'user_id', op: '==' as const, value: userId }, { field: 'read', op: '==' as const, value: false }], undefined, 1000, 1);

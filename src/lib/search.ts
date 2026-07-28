@@ -1,7 +1,7 @@
-import { searchDocs, getDocsAll, getDocsPaginated } from './firestore';
+import { getDocsAll } from './firestore';
 import type { SearchResult } from '../types';
 
-export const globalSearch = async (query: string, hospitalScope?: string): Promise<SearchResult[]> => {
+export const globalSearch = async (query: string, _hospitalScope?: string): Promise<SearchResult[]> => {
   if (!query || query.trim().length < 2) return [];
 
   const results: SearchResult[] = [];

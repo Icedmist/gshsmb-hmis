@@ -57,7 +57,6 @@ export default function DashboardPage() {
 
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [empPerHospital, setEmpPerHospital] = useState<{ name: string; value: number }[]>([]);
-  const [empPerDept, setEmpPerDept] = useState<{ id: string; name: string; value: number }[]>([]);
   const [recentEmployees, setRecentEmployees] = useState<Employee[]>([]);
   const [recentTransfers, setRecentTransfers] = useState<EmployeeTransfer[]>([]);
 
@@ -122,7 +121,7 @@ export default function DashboardPage() {
       const [s, eph, epd, re, rt, hospitals, kpis, clinicalAudits, nursingAudits, research] = results.map(r => r.status === 'fulfilled' ? r.value : undefined);
       if (s) setStats(s as DashboardStats);
       if (eph) setEmpPerHospital((eph as any[]).map(h => ({ name: h.hospital_name, value: parseInt(h.employee_count) })));
-      if (epd) setEmpPerDept((epd as any[]).map(d => ({ id: d.id, name: d.department_name, value: parseInt(d.employee_count) })));
+
       if (re) setRecentEmployees(Array.isArray(re) ? re : []);
       if (rt) setRecentTransfers(Array.isArray(rt) ? rt : []);
 
@@ -252,6 +251,7 @@ export default function DashboardPage() {
         return () => clearInterval(interval);
       }
     }
+// eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadDashboardData]);
 
   useEffect(() => {

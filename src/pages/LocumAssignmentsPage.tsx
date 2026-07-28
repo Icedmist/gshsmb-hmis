@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Briefcase, ChevronDown, Clock, CheckCircle, AlertTriangle, Calendar } from 'lucide-react';
+import { Briefcase, ChevronDown, Clock, Calendar } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { getLocumAssignments, updateLocumAssignment, getLocumHistory } from '../lib/locums';
+import { getLocumAssignments, getLocumHistory } from '../lib/locums';
 import { getHospitalScope } from '../lib/scope';
 import Pagination from '../components/common/Pagination';
-import type { LocumAssignment, LocumHistory } from '../types';
+import type { LocumAssignment } from '../types';
 
 const STATUS_BADGES: Record<string, string> = {
   active: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20',
@@ -12,14 +12,11 @@ const STATUS_BADGES: Record<string, string> = {
   expired: 'bg-slate-50 text-slate-600 ring-1 ring-slate-400/20',
 };
 
-const SAMPLE_DATES = false;
-
 export default function LocumAssignmentsPage() {
   const { user } = useAuth();
   const hospitalScope = getHospitalScope(user);
   const [tab, setTab] = useState<'active' | 'history'>('active');
   const [items, setItems] = useState<LocumAssignment[]>([]);
-  const [historyItems, setHistoryItems] = useState<LocumHistory[]>([]);
   const [pagination, setPagination] = useState({ page: 1, limit: 50, total: 0, totalPages: 0 });
   const [histPagination, setHistPagination] = useState({ page: 1, limit: 50, total: 0, totalPages: 0 });
   const [loading, setLoading] = useState(true);
@@ -34,13 +31,13 @@ export default function LocumAssignmentsPage() {
       setPagination({ page, limit: 50, total, totalPages: Math.ceil(total / 50) });
       if (tab === 'history') {
         const h = await getLocumHistory(undefined, page, 50);
-        setHistoryItems(h.data);
         setHistPagination({ page, limit: 50, total: h.total, totalPages: Math.ceil(h.total / 50) });
       }
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { loadItems(); }, [tab, statusFilter, hospitalScope]);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadItems(); }, [tab, statusFilter, hospitalScope, loadItems]);
 
   const formatDate = (d: any) => {
     if (!d) return '—';

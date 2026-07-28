@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, ChevronDown, Clock, UserCheck, FileText, Building2, Activity, Filter } from 'lucide-react';
+import { Search, ChevronDown, UserCheck, FileText, Activity, Filter } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getActivities } from '../lib/activities';
 import { getHospitalScope } from '../lib/scope';
@@ -49,7 +49,8 @@ export default function ActivityTimelinePage() {
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { loadItems(); }, [entityFilter, actionFilter]);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadItems(); }, [entityFilter, actionFilter, loadItems]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadItems(); };
 

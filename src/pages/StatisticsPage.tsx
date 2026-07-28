@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { HospitalStatistic, Pagination as PaginationType } from '../types';
+import { Pagination as PaginationType } from '../types';
 import Modal from '../components/common/Modal';
 import Pagination from '../components/common/Pagination';
 import { useAuth } from '../contexts/AuthContext';
@@ -75,10 +75,6 @@ export default function StatisticsPage() {
       await deleteDocument('hospitalStatistics', s.id);
       loadStats(pagination.page);
     } catch (err: any) { alert(err.message); }
-  };
-
-  const handleToggleStatus = async (s: any) => {
-    alert('Status toggle not applicable for statistics.');
   };
 
   const uniqueMetrics = stats.reduce((acc: string[], s: any) => {

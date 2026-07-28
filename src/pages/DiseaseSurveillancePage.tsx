@@ -3,7 +3,7 @@ import { Pagination as PaginationType } from '../types';
 import Modal from '../components/common/Modal';
 import Pagination from '../components/common/Pagination';
 import { useAuth } from '../contexts/AuthContext';
-import { Plus, Search, Pencil, Trash2, Activity, Building2, TrendingUp, TrendingDown, Calendar, AlertTriangle } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Activity, Building2, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
 import StatCard from '../components/common/StatCard';
 import { getDiseaseSurveillanceReports, createDiseaseSurveillanceReport, updateDiseaseSurveillanceReport, deleteDiseaseSurveillanceReport } from '../lib/laboratory';
 import { getAllHospitals } from '../lib/hospitals';
@@ -33,7 +33,8 @@ export default function DiseaseSurveillancePage() {
     }
   };
 
-  useEffect(() => { loadData(); }, []);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadData(); }, [loadData]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadData(); };
 

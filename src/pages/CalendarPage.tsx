@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Pencil, Trash2, Calendar, Clock, MapPin, Building2, ChevronDown, Tag } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Calendar, Clock, ChevronDown, Tag } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getEvents, createEvent, updateEvent, deleteEvent, getUpcomingEvents } from '../lib/calendar';
 import { getAllHospitals } from '../lib/hospitals';
@@ -17,7 +17,7 @@ const TYPE_COLORS: Record<string, string> = {
 };
 
 export default function CalendarPage() {
-  const { user, hasRole } = useAuth();
+  const { user } = useAuth();
   const hospitalScope = getHospitalScope(user);
   const [items, setItems] = useState<CalendarEvent[]>([]);
   const [pagination, setPagination] = useState({ page: 1, limit: 50, total: 0, totalPages: 0 });
@@ -52,7 +52,8 @@ export default function CalendarPage() {
     try { const data = await getAllHospitals(hospitalScope); setHospitals((data || []).map((h: any) => ({ id: h.id, hospital_name: h.hospital_name }))); } catch {}
   };
 
-  useEffect(() => { loadItems(); loadHospitals(); }, [typeFilter]);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadItems(); loadHospitals(); }, [typeFilter, loadItems, loadHospitals]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadItems(); };
 

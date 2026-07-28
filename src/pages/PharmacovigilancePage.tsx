@@ -3,7 +3,7 @@ import type { Pagination as PaginationType } from '../types';
 import Modal from '../components/common/Modal';
 import Pagination from '../components/common/Pagination';
 import { useAuth } from '../contexts/AuthContext';
-import { Plus, Search, Pencil, Trash2, AlertTriangle, Building2, Calendar, AlertCircle } from 'lucide-react';
+import { Plus, Search, Pencil, AlertTriangle, Calendar, AlertCircle } from 'lucide-react';
 import StatCard from '../components/common/StatCard';
 import { getPharmacovigilanceReports, createPharmacovigilanceReport, updatePharmacovigilanceReport } from '../lib/pharmaceutical';
 import { getAllHospitals } from '../lib/hospitals';
@@ -34,7 +34,8 @@ export default function PharmacovigilancePage() {
     }
   };
 
-  useEffect(() => { loadData(); }, []);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadData(); }, [loadData]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadData(); };
 

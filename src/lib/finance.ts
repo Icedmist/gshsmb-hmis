@@ -1,10 +1,10 @@
 import {
   Budget, BudgetItem, FinancialReport, RevenueRecord, ExpenditureRecord,
-  PayrollReport, PayrollHistory, TreasuryRecord, Asset, AssetCategory,
+  PayrollReport, TreasuryRecord, Asset, AssetCategory,
   AssetAssignment, AssetMaintenance, ComplianceReport, FinancialAnalytic,
   FinancialDocument, FinancialReview,
 } from '../types';
-import { getDocById, getDocsPaginated, getDocsAll, addDocument, updateDocument, deleteDocument, countDocs, type FilterConstraint, type PaginationResult } from './firestore';
+import { getDocById, getDocsPaginated, getDocsAll, addDocument, updateDocument, deleteDocument, type FilterConstraint, type PaginationResult } from './firestore';
 
 export const getBudgets = async (page = 1, limit = 50, search?: string, hospitalScope?: string): Promise<PaginationResult<Budget>> => {
   const filters: FilterConstraint[] = [];

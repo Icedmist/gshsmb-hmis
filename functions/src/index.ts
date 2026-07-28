@@ -125,7 +125,7 @@ export const deleteUser = functions.https.onCall(async (data: { userId: string }
     });
 
     return { success: true };
-  } catch (error: any) {
+  } catch {
     throw new functions.https.HttpsError('internal', 'Failed to delete user.');
   }
 });

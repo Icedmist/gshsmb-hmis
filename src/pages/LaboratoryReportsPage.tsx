@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Pagination as PaginationType } from '../types';
 import Pagination from '../components/common/Pagination';
 import { useAuth } from '../contexts/AuthContext';
-import { FileText, Search, Calendar, Building2, Download } from 'lucide-react';
+import { FileText, Search, Download } from 'lucide-react';
 import StatCard from '../components/common/StatCard';
 import { getLaboratoryReports } from '../lib/laboratory';
 import { getHospitalScope } from '../lib/scope';
@@ -27,7 +27,8 @@ export default function LaboratoryReportsPage() {
     }
   };
 
-  useEffect(() => { loadData(); }, []);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadData(); }, [loadData]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadData(); };
 

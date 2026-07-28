@@ -55,14 +55,14 @@ export const updateTask = async (id: string, data: Partial<Task>): Promise<void>
   if (data.status === 'completed') {
     payload.completed_at = new Date().toISOString();
     try {
-      const task = await getDocById<Task>('tasks', id);
+      const task: Task | null = await getDocById('tasks', id);
       if (task) {
         if (task.assigned_by) {
           await addDocument('notifications', {
             user_id: task.assigned_by,
             type: 'task_completed',
             title: 'Task Completed',
-            message: `Task "${task.title}" was marked as completed by ${data.completed_by_name || 'the hospital'}`,
+            message: `Task "${task.title}" was marked as completed`,
             link: '/tasks',
             read: false,
             created_at: new Date().toISOString(),

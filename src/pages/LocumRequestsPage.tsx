@@ -1,15 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Briefcase, Plus, Search, ChevronDown, CheckCircle, XCircle, Clock, Trash2, ArrowUpRight, Calendar } from 'lucide-react';
+import { Briefcase, Plus, Search, ChevronDown, CheckCircle, XCircle, Trash2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { getLocumRequests, createLocumRequest, updateLocumRequest, cancelLocumRequest, getLocumApprovals, createLocumApproval, createLocumAssignment } from '../lib/locums';
+import { getLocumRequests, createLocumRequest, updateLocumRequest, cancelLocumRequest, createLocumApproval, createLocumAssignment } from '../lib/locums';
 import { getAllHospitals } from '../lib/hospitals';
-import { getEmployees } from '../lib/employees';
 import { getHospitalScope } from '../lib/scope';
 import { getHospitalAdmins } from '../lib/users';
 import { addDocument } from '../lib/firestore';
 import Modal from '../components/common/Modal';
 import Pagination from '../components/common/Pagination';
-import type { LocumRequest, LocumApproval } from '../types';
+import type { LocumRequest } from '../types';
 
 const READ_ONLY_ROLES = ['super_admin', 'executive_secretary'];
 
@@ -23,7 +22,7 @@ const STATUS_BADGES: Record<string, string> = {
 };
 
 export default function LocumRequestsPage() {
-  const { user, hasRole } = useAuth();
+  const { user } = useAuth();
   const hospitalScope = getHospitalScope(user);
   const [items, setItems] = useState<LocumRequest[]>([]);
   const [pagination, setPagination] = useState({ page: 1, limit: 50, total: 0, totalPages: 0 });
@@ -47,7 +46,8 @@ export default function LocumRequestsPage() {
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { loadItems(); }, [statusFilter, hospitalScope]);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadItems(); }, [statusFilter, hospitalScope, loadItems]);
 
   const loadHospitals = async () => {
     try { const d = await getAllHospitals(); setHospitals((d || []).map(h => ({ id: h.id, hospital_name: h.hospital_name }))); } catch {}
@@ -308,9 +308,9 @@ export default function LocumRequestsPage() {
                     <td className="px-5 py-4">
                       <span className="text-sm font-medium text-slate-700">{r.duration_days}d</span>
                       <span className="text-[10px] text-slate-400 ml-1 block">
-                        {r.start_date?.toDate ? r.start_date.toDate().toLocaleDateString('en-NG', { day: 'numeric', month: 'short' }) : r.start_date?.toString().slice(0, 10) || '—'}
+                        {new Date(r.start_date).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })}
                         {' → '}
-                        {r.end_date?.toDate ? r.end_date.toDate().toLocaleDateString('en-NG', { day: 'numeric', month: 'short' }) : r.end_date?.toString().slice(0, 10) || '—'}
+                        {new Date(r.end_date).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })}
                       </span>
                     </td>
                     <td className="px-5 py-4">

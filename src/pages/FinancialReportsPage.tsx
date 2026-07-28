@@ -50,7 +50,8 @@ export default function FinancialReportsPage() {
     setReviews(revs);
   };
 
-  useEffect(() => { load(); }, [filterType]);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, [filterType, load]);
 
   useEffect(() => {
     const action = searchParams.get('action');
@@ -66,7 +67,8 @@ export default function FinancialReportsPage() {
     } else if (action === 'reviews' && isHospitalAdmin) {
       loadReviews();
     }
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, loadDocuments, loadReviews, isHospitalAdmin, setSearchParams]);
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();

@@ -8,8 +8,7 @@ import { getPharmaceuticalReports } from '../lib/pharmaceutical';
 import { getHospitalScope } from '../lib/scope';
 
 export default function PharmaceuticalReportsPage() {
-  const { hasRole, user } = useAuth();
-  const canView = hasRole('director_pharmaceutical_services', 'executive_secretary', 'pharmacy_admin');
+  const { user } = useAuth();
   const hospitalScope = getHospitalScope(user);
   const [items, setItems] = useState<any[]>([]);
   const [pagination, setPagination] = useState<PaginationType>({ page: 1, limit: 50, total: 0, totalPages: 0 });
@@ -27,7 +26,8 @@ export default function PharmaceuticalReportsPage() {
     }
   };
 
-  useEffect(() => { loadData(); }, []);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadData(); }, [loadData]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadData(); };
 

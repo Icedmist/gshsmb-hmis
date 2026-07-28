@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getAssets, createAsset, updateAsset, deleteAsset, getAssetCategories, createAssetCategory, getAssetAssignments, createAssetAssignment, getAssetMaintenance, createAssetMaintenance } from '../lib/finance';
+import { getAssets, createAsset, updateAsset, deleteAsset, getAssetCategories, createAssetCategory, getAssetAssignments, getAssetMaintenance } from '../lib/finance';
 import { getAllHospitals } from '../lib/hospitals';
 import { Briefcase, Plus, Edit3, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 
@@ -25,7 +25,8 @@ export default function AssetManagementPage() {
     setHospitals(h);
     setLoading(false);
   };
-  useEffect(() => { load(); }, []);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, [load]);
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
@@ -45,7 +46,7 @@ export default function AssetManagementPage() {
   const toggleExpand = async (id: string) => {
     if (expandedId === id) { setExpandedId(null); return; }
     setExpandedId(id);
-    const [asgn, maint] = await Promise.all([getAssetAssignments(id), getAssetMaintenance(1, 10)]);
+    const [asgn] = await Promise.all([getAssetAssignments(id), getAssetMaintenance(1, 10)]);
     setAssignments(asgn);
   };
 

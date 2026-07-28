@@ -1,26 +1,20 @@
 import { useState, useEffect } from 'react';
-import { getFinancialAnalytics, getFinanceDashboardStats, createFinancialAnalytic } from '../lib/finance';
+import { getFinancialAnalytics, getFinanceDashboardStats } from '../lib/finance';
 import { getAllHospitals } from '../lib/hospitals';
 import { BarChart3, TrendingUp, TrendingDown, DollarSign, PiggyBank, Building2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { useAuth } from '../contexts/AuthContext';
 
 const COLORS = ['#008751', '#22c55e', '#6b7e36', '#84cc16', '#0d9488', '#14b8a6', '#65a30d'];
 const tooltipStyle = { borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 8px 30px rgba(0,0,0,0.08)', padding: '10px 14px', background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)' };
 
 export default function FinancialAnalyticsPage() {
-  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
-  const [hospitals, setHospitals] = useState<any[]>([]);
-  const [analytics, setAnalytics] = useState<any[]>([]);
 
   useEffect(() => {
     const load = async () => {
-      const [s, h, a] = await Promise.all([getFinanceDashboardStats(), getAllHospitals(), getFinancialAnalytics()]);
+      const [s] = await Promise.all([getFinanceDashboardStats(), getAllHospitals(), getFinancialAnalytics()]);
       setStats(s);
-      setHospitals(h);
-      setAnalytics(a);
       setLoading(false);
     };
     load();

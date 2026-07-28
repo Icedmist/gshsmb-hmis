@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Shield, Scale, ArrowLeft, Eye, EyeOff, KeyRound, Mail, Lock, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Shield, Scale, ArrowLeft, Eye, EyeOff, KeyRound, Mail, Lock, CheckCircle2 } from 'lucide-react';
 import logo from '../../assets/logo.jpeg';
 
 export default function ResetPasswordPage() {

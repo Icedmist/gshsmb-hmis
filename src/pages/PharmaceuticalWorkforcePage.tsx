@@ -3,7 +3,7 @@ import type { Pagination as PaginationType } from '../types';
 import Modal from '../components/common/Modal';
 import Pagination from '../components/common/Pagination';
 import { useAuth } from '../contexts/AuthContext';
-import { Search, Pencil, Trash2, Users, Briefcase, Building2, UserMinus, Plus } from 'lucide-react';
+import { Search, Pencil, Users, Briefcase, Building2, UserMinus, Plus } from 'lucide-react';
 import StatCard from '../components/common/StatCard';
 import { getPharmaceuticalWorkforce, createPharmaceuticalWorkforce, updatePharmaceuticalWorkforce } from '../lib/pharmaceutical';
 import { getAllHospitals } from '../lib/hospitals';
@@ -12,7 +12,6 @@ import { getHospitalScope } from '../lib/scope';
 export default function PharmaceuticalWorkforcePage() {
   const { hasRole, user } = useAuth();
   const canManage = hasRole('super_admin', 'pharmacy_admin');
-  const canView = hasRole('super_admin', 'director_pharmaceutical_services', 'pharmacy_admin', 'hr_officer', 'director_hr');
   const hospitalScope = getHospitalScope(user);
   const [items, setItems] = useState<any[]>([]);
   const [hospitals, setHospitals] = useState<{ id: string; hospital_name: string }[]>([]);
@@ -34,7 +33,8 @@ export default function PharmaceuticalWorkforcePage() {
     }
   };
 
-  useEffect(() => { loadData(); }, []);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadData(); }, [loadData]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadData(); };
 

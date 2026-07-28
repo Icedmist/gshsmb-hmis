@@ -1,9 +1,8 @@
-import { addDocument, getDocsPaginated, updateDocument, deleteDocument, getDocById, getDocsAll } from './firestore';
+import { addDocument, getDocsPaginated, updateDocument, getDocById, getDocsAll } from './firestore';
 import { getHospitalAdmins } from './users';
 import type {
   LocumRequest, StaffingRequest, StaffNomination,
   LocumAssignment, LocumApproval, LocumHistory,
-  LocumRequestStatus, StaffingRequestStatus,
 } from '../types';
 
 // ─── Locum Requests (Employee-Initiated) ───

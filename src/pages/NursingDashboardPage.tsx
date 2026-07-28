@@ -27,10 +27,6 @@ export default function NursingDashboardPage() {
   const [recentCerts, setRecentCerts] = useState<any[]>([]);
   const [staffingGaps, setStaffingGaps] = useState<any[]>([]);
 
-  useEffect(() => {
-    loadDashboard();
-  }, []);
-
   const loadDashboard = async () => {
     setLoading(true);
     try {
@@ -74,6 +70,10 @@ export default function NursingDashboardPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadDashboard();
+  }, []);
 
   const tooltipStyle = {
     borderRadius: '12px',

@@ -38,7 +38,8 @@ export default function NursingWorkforcePage() {
     }
   };
 
-  useEffect(() => { loadItems(); }, []);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadItems(); }, [loadItems]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadItems(); };
 

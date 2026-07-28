@@ -24,10 +24,6 @@ export default function MedicalDashboardPage() {
   const [recentReferrals, setRecentReferrals] = useState<any[]>([]);
   const [financialReports, setFinancialReports] = useState<any[]>([]);
 
-  useEffect(() => {
-    loadDashboard();
-  }, []);
-
   const loadDashboard = async () => {
     setLoading(true);
     try {
@@ -82,6 +78,10 @@ export default function MedicalDashboardPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadDashboard();
+  }, []);
 
   if (loading) {
     return (

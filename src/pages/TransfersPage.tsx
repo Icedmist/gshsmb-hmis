@@ -4,7 +4,7 @@ import { getTransfers, approveTransfer, rejectTransfer } from '../lib/transfers'
 import Pagination from '../components/common/Pagination';
 import { useAuth } from '../contexts/AuthContext';
 import { getHospitalScope } from '../lib/scope';
-import { ArrowRightLeft, Search, Check, X, Clock, Send, UserCheck, Ban } from 'lucide-react';
+import { ArrowRightLeft, Search, Check, X, Clock, UserCheck, Ban } from 'lucide-react';
 import StatCard from '../components/common/StatCard';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -35,6 +35,7 @@ export default function TransfersPage() {
     }
   };
 
+// eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadTransfers(); }, []);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadTransfers(); };

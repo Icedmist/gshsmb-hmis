@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { HospitalScorecard, DepartmentScorecard, Pagination as PaginationType } from '../types';
+import { Pagination as PaginationType } from '../types';
 import Modal from '../components/common/Modal';
 import Pagination from '../components/common/Pagination';
 import { useAuth } from '../contexts/AuthContext';
-import { Plus, Search, Pencil, Trash2, Award, Building2, Users, Percent, X, Check } from 'lucide-react';
+import { Plus, Pencil, Trash2, Award, Building2, Users, Percent, X, Check } from 'lucide-react';
 import StatCard from '../components/common/StatCard';
 import { getHospitalScorecards, createHospitalScorecard, updateHospitalScorecard, deleteHospitalScorecard, getDepartmentScorecards, createDepartmentScorecard, updateDepartmentScorecard, deleteDepartmentScorecard } from '../lib/scorecards';
 import { getAllHospitals } from '../lib/hospitals';
@@ -59,8 +59,6 @@ export default function ScorecardsPage() {
   };
 
   useEffect(() => { loadAll(); }, []);
-
-  const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadAll(); };
 
   const loadDropdowns = async () => {
     const [hData, dData] = await Promise.all([getAllHospitals(), getAllDepartments()]);

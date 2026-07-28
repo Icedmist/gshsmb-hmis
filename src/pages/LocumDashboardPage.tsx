@@ -5,7 +5,7 @@ import { getHospitalScope } from '../lib/scope';
 import { getLocumDashboardStats, getLocumAssignments, getLocumRequests, getStaffingRequests } from '../lib/locums';
 import { Link } from 'react-router-dom';
 import StatCard from '../components/common/StatCard';
-import type { LocumAssignment, LocumRequest, StaffingRequest } from '../types';
+import type { LocumAssignment, LocumRequest } from '../types';
 
 function Skeleton() {
   return (
@@ -36,7 +36,6 @@ export default function LocumDashboardPage() {
   const [stats, setStats] = useState({ activeAssignments: 0, pendingRequests: 0, openStaffingRequests: 0, upcomingExpiry: 0, completedAssignments: 0 });
   const [recentAssignments, setRecentAssignments] = useState<LocumAssignment[]>([]);
   const [recentRequests, setRecentRequests] = useState<LocumRequest[]>([]);
-  const [openRequests, setOpenRequests] = useState<StaffingRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -58,7 +57,6 @@ export default function LocumDashboardPage() {
         setStats(s);
         setRecentAssignments(assignRes.data);
         setRecentRequests(reqRes.data);
-        setOpenRequests(staffRes.data);
       } finally {
         setLoading(false);
       }
@@ -181,9 +179,9 @@ export default function LocumDashboardPage() {
                       <td className="px-5 py-4">
                         <span className="text-sm font-medium text-slate-700">{a.duration_days}d</span>
                         <span className="text-[10px] text-slate-400 ml-1 block">
-                          {a.start_date?.toDate ? a.start_date.toDate().toLocaleDateString('en-NG', { day: 'numeric', month: 'short' }) : '—'}
+                          {new Date(a.start_date).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })}
                           {' → '}
-                          {a.end_date?.toDate ? a.end_date.toDate().toLocaleDateString('en-NG', { day: 'numeric', month: 'short' }) : '—'}
+                          {new Date(a.end_date).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })}
                         </span>
                       </td>
                       <td className="px-5 py-4">

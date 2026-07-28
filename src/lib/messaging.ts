@@ -1,12 +1,13 @@
 import { addDocument, getDocsPaginated, updateDocument, deleteDocument, getDocById } from './firestore';
+import type { FilterConstraint } from './firestore';
 import type { Message, MessageThread, Announcement } from '../types';
 
 export const getThreads = async (
   userId: string, page = 1, limit = 50, hospitalScope?: string,
 ): Promise<{ data: MessageThread[]; total: number }> => {
-  const filters = [{ field: 'participants', op: 'array-contains' as const, value: userId }];
-  if (hospitalScope) filters.push({ field: 'hospital_id', op: '==' as const, value: hospitalScope });
-  return getDocsPaginated('message_threads', filters, { field: 'last_message_at', dir: 'desc' as const }, limit, page);
+  const filters: FilterConstraint[] = [{ field: 'participants', op: 'array-contains', value: userId }];
+  if (hospitalScope) filters.push({ field: 'hospital_id', op: '==', value: hospitalScope });
+  return getDocsPaginated('message_threads', filters, { field: 'last_message_at', dir: 'desc' }, limit, page);
 };
 
 export const getThread = async (id: string): Promise<MessageThread | null> => {
@@ -46,7 +47,7 @@ export const sendMessage = async (data: Omit<Message, 'id' | 'created_at'>): Pro
     last_message_by: data.sender_id,
   });
   try {
-    const thread = await getDocById<MessageThread>('message_threads', data.thread_id);
+    const thread: MessageThread | null = await getDocById('message_threads', data.thread_id);
     if (thread) {
       for (const pid of thread.participants) {
         if (pid !== data.sender_id) {
@@ -67,7 +68,7 @@ export const sendMessage = async (data: Omit<Message, 'id' | 'created_at'>): Pro
 };
 
 export const markThreadAsRead = async (threadId: string, userId: string): Promise<void> => {
-  const thread = await getDocById<MessageThread>('message_threads', threadId);
+  const thread: MessageThread | null = await getDocById('message_threads', threadId);
   if (thread && !thread.participants.includes(userId)) return;
   const { data: unread } = await getDocsPaginated('messages', [
     { field: 'thread_id', op: '==', value: threadId },

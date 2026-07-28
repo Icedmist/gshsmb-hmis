@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { getWorkforceDistribution, getHospitalStaffing, getDepartmentStaffing, getTransfersReport, getActiveEmployeesReport } from '../lib/reports';
 import { useAuth } from '../contexts/AuthContext';
-import { FileText, Download, Building2, Building, Users, ArrowRightLeft, UserCheck, BarChart3 } from 'lucide-react';
+import { FileText, Download, Building2, Building, ArrowRightLeft, UserCheck, BarChart3 } from 'lucide-react';
 
 interface ReportCard {
   key: string;

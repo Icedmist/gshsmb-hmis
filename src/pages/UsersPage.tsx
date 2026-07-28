@@ -42,8 +42,10 @@ export default function UsersPage() {
 
   useEffect(() => {
     if (showModal) loadHospitals();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showModal]);
 
+// eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadUsers(); loadHospitals(); }, []);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadUsers(); };

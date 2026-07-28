@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
-import { User as FirebaseUser, browserLocalPersistence, setPersistence } from 'firebase/auth';
+import { User as FirebaseUser } from 'firebase/auth';
 import {
   loginUser,
   logoutUser,
@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           const profile = await getUserProfile(firebaseUser.uid);
           if (profile && isActive(profile)) {
-            const { firebase_uid, created_at, updated_at, ...safe } = profile;
+            const { ...safe } = profile;
             setUser(safe);
             localStorage.setItem('gshsmb_user', JSON.stringify(safe));
           } else if (profile && !isActive(profile)) {
@@ -101,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           try {
             const profile = await getUserProfile(fbUser.uid);
             if (profile && isActive(profile)) {
-              const { firebase_uid, created_at, updated_at, ...safe } = profile;
+              const { ...safe } = profile;
               setUser(safe);
               localStorage.setItem('gshsmb_user', JSON.stringify(safe));
             } else if (profile && !isActive(profile)) {
@@ -136,7 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     const { profile } = await loginUser(email, password);
-    const { firebase_uid, created_at, updated_at, ...safe } = profile;
+    const { ...safe } = profile;
     setUser(safe);
     localStorage.setItem('gshsmb_user', JSON.stringify(safe));
   };

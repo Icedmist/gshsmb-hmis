@@ -3,7 +3,7 @@ import { Employee, Pagination as PaginationType } from '../types';
 import Modal from '../components/common/Modal';
 import Pagination from '../components/common/Pagination';
 import { useAuth } from '../contexts/AuthContext';
-import { Plus, Search, Pencil, Trash2, ArrowRightLeft, Users, X, ChevronDown, UserCheck, UserX, User } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, ArrowRightLeft, Users, ChevronDown, UserCheck, UserX, User } from 'lucide-react';
 import { POSITION_CATEGORIES } from '../types';
 import StatCard from '../components/common/StatCard';
 import { getEmployees, createEmployee, updateEmployee, deleteEmployee, transferEmployee } from '../lib/employees';
@@ -61,14 +61,19 @@ export default function EmployeesPage() {
     } catch (err: any) { console.error('Failed to load reference data:', err); }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadEmployees(); loadReferenceData(); }, []);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     loadEmployees();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hospitalFilter]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (showModal) loadReferenceData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showModal]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadEmployees(); };

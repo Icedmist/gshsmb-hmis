@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Trash2, Play, XCircle, Layers, Clock, CheckCircle, AlertCircle, History, UserCheck } from 'lucide-react';
+import { Plus, Search, Trash2, Play, XCircle, Layers, Clock, CheckCircle, AlertCircle, History, UserCheck, ChevronDown } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getWorkflows, createWorkflow, updateWorkflow, deleteWorkflow, getWorkflowSteps, getWorkflowHistory, submitWorkflow, getWorkflowsSummary } from '../lib/workflows';
 import { getAllHospitals } from '../lib/hospitals';
@@ -47,6 +47,7 @@ export default function WorkflowsPage() {
     } catch {}
   };
 
+// eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadData(); loadSummary(); }, [filterStatus]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadData(); };

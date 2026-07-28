@@ -21,10 +21,6 @@ export default function PRSDashboardPage() {
   const [topKPIs, setTopKPIs] = useState<any[]>([]);
   const [recentScorecards, setRecentScorecards] = useState<any[]>([]);
 
-  useEffect(() => {
-    loadDashboard();
-  }, []);
-
   const loadDashboard = async () => {
     setLoading(true);
     try {
@@ -55,6 +51,10 @@ export default function PRSDashboardPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadDashboard();
+  }, []);
 
   if (loading) {
     return (

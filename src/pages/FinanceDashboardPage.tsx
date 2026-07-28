@@ -1,13 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import StatCard from '../components/common/StatCard';
 import { getFinanceDashboardStats } from '../lib/finance';
 import { getAllHospitals } from '../lib/hospitals';
-import { DollarSign, PiggyBank, TrendingUp, TrendingDown, Wallet, Landmark, Briefcase, Scale, FileText, BarChart3, ArrowUpRight, RefreshCw, Layers } from 'lucide-react';
+import { DollarSign, PiggyBank, TrendingUp, TrendingDown, Wallet, Landmark, Briefcase, Scale, FileText, BarChart3, RefreshCw } from 'lucide-react';
 
 export default function FinanceDashboardPage() {
-  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -27,7 +25,7 @@ export default function FinanceDashboardPage() {
     }
   }, []);
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { loadData(); }, [loadData]);
 
   const secondsAgo = lastUpdated ? Math.floor((Date.now() - lastUpdated.getTime()) / 1000) : null;
 

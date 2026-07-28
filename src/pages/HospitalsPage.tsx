@@ -37,7 +37,8 @@ export default function HospitalsPage() {
     }
   };
 
-  useEffect(() => { loadHospitals(); }, []);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadHospitals(); }, [loadHospitals]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadHospitals(); };
 

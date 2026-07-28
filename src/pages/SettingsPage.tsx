@@ -9,7 +9,7 @@ import { Save, Camera, Shield, KeyRound, User } from 'lucide-react';
 import Modal from '../components/common/Modal';
 
 export default function SettingsPage() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [fullName, setFullName] = useState(user?.full_name || '');
   const [email, setEmail] = useState(user?.email || '');

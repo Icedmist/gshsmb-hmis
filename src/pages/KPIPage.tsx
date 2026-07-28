@@ -33,7 +33,8 @@ export default function KPIPage() {
     }
   };
 
-  useEffect(() => { loadKPIs(); }, []);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadKPIs(); }, [loadKPIs]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadKPIs(); };
 

@@ -6,7 +6,7 @@ import { getHospitalScope } from '../lib/scope';
 import Modal from '../components/common/Modal';
 import Pagination from '../components/common/Pagination';
 import { useAuth } from '../contexts/AuthContext';
-import { Plus, Search, Pencil, Trash2, Building, Check, X, ChevronDown, ChevronRight, Hospital, Shield, Activity, Layers } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Building, Check, X, ChevronDown, ChevronRight, Hospital, Activity, Layers } from 'lucide-react';
 import StatCard from '../components/common/StatCard';
 
 export default function DepartmentsPage() {
@@ -56,8 +56,8 @@ export default function DepartmentsPage() {
       setHospitals((data || []).map((h: any) => ({ id: h.id, hospital_name: h.hospital_name, hospital_code: h.hospital_code })));
     } catch {}
   };
-
-  useEffect(() => { loadDepartments(); loadHospitals(); }, []);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadDepartments(); loadHospitals(); }, [loadDepartments, loadHospitals]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadDepartments(); };
 

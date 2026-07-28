@@ -57,7 +57,8 @@ export default function ReferralOversightPage() {
     }
   };
 
-  useEffect(() => { loadReferrals(); }, []);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadReferrals(); }, [loadReferrals]);
 
   const handleRefSearch = (e: React.FormEvent) => { e.preventDefault(); loadReferrals(); };
 
@@ -108,7 +109,8 @@ export default function ReferralOversightPage() {
     }
   };
 
-  useEffect(() => { loadEmergencies(); }, []);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadEmergencies(); }, [loadEmergencies]);
 
   const handleEmgSearch = (e: React.FormEvent) => { e.preventDefault(); loadEmergencies(); };
 

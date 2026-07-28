@@ -54,6 +54,7 @@ export default function StaffingRequestsPage() {
     } finally { setLoading(false); }
   };
 
+// eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadItems(); }, [statusFilter]);
 
   const openCreate = () => {
@@ -188,7 +189,6 @@ export default function StaffingRequestsPage() {
   };
 
   const canAddStaff = hasRole('hospital_admin', 'super_admin', 'executive_secretary');
-  const canApproveNomination = (req: StaffingRequest) => (user?.role === 'hospital_admin' && req.hospital_id === user?.hospital_id) || hasRole('super_admin', 'executive_secretary');
 
   return (
     <div className="space-y-6 animate-fade-in">

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Pencil, Trash2, FileText, Download, Archive, ChevronDown, BookOpen, Layers, History } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, FileText, Download, Archive, BookOpen, Layers, History } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getDocuments, createDocument, updateDocument, deleteDocument, getDocumentCategories, getDocumentVersions, archiveDocument, publishDocument } from '../lib/documents';
 import { getAllHospitals } from '../lib/hospitals';
@@ -55,7 +55,8 @@ export default function DocumentsPage() {
     }
   };
 
-  useEffect(() => { loadData(); }, [filterType, filterStatus]);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadData(); }, [filterType, filterStatus, loadData]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadData(); };
 

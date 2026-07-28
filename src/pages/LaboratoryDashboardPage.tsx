@@ -22,10 +22,6 @@ export default function LaboratoryDashboardPage() {
   const [recentEquipment, setRecentEquipment] = useState<any[]>([]);
   const [recentSurveillance, setRecentSurveillance] = useState<any[]>([]);
 
-  useEffect(() => {
-    loadDashboard();
-  }, []);
-
   const loadDashboard = async () => {
     setLoading(true);
     try {
@@ -64,6 +60,10 @@ export default function LaboratoryDashboardPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadDashboard();
+  }, []);
 
   if (loading) {
     return (

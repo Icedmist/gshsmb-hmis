@@ -12,7 +12,6 @@ import { getHospitalScope } from '../lib/scope';
 export default function MedicineRegistryPage() {
   const { hasRole, user } = useAuth();
   const canManage = hasRole('super_admin', 'pharmacy_admin');
-  const canView = hasRole('super_admin', 'director_pharmaceutical_services', 'pharmacy_admin', 'hospital_admin');
   const hospitalScope = getHospitalScope(user);
   const [items, setItems] = useState<any[]>([]);
   const [hospitals, setHospitals] = useState<{ id: string; hospital_name: string }[]>([]);
@@ -37,7 +36,8 @@ export default function MedicineRegistryPage() {
     }
   };
 
-  useEffect(() => { loadData(); }, []);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadData(); }, [loadData]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadData(); };
 

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Search, Send, MessageSquare, Users, Megaphone, Trash2, Mail, MailOpen, Flag, Building2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { getThreads, getThread, createThread, getMessages, sendMessage, markThreadAsRead, getAnnouncements, createAnnouncement, deleteAnnouncement } from '../lib/messaging';
+import { getThreads, createThread, getMessages, sendMessage, markThreadAsRead, getAnnouncements, createAnnouncement, deleteAnnouncement } from '../lib/messaging';
 import { getAllHospitals } from '../lib/hospitals';
 import { getHospitalScope } from '../lib/scope';
 import { getHospitalAdmins, getExecutiveAdmins } from '../lib/users';
@@ -9,6 +9,13 @@ import Modal from '../components/common/Modal';
 import Pagination from '../components/common/Pagination';
 import type { MessageThread, Message, Announcement } from '../types';
 import type { Pagination as PaginationType } from '../types';
+
+const PRIORITY_COLORS: Record<string, string> = {
+  low: 'bg-slate-100 text-slate-600 border-slate-200',
+  normal: 'bg-blue-50 text-blue-600 border-blue-200',
+  high: 'bg-orange-50 text-orange-600 border-orange-200',
+  urgent: 'bg-red-50 text-red-600 border-red-200',
+};
 
 type Tab = 'messages' | 'announcements';
 
@@ -51,7 +58,8 @@ export default function MessagesPage() {
     if (tab === 'messages') loadThreads();
     const interval = setInterval(() => { if (tab === 'messages') loadThreads(); }, 15000);
     return () => clearInterval(interval);
-  }, [tab, user]);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, user, loadThreads]);
 
   useEffect(() => {
     (async () => {

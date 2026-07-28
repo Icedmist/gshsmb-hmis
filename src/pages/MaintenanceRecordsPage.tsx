@@ -3,7 +3,7 @@ import { Pagination as PaginationType } from '../types';
 import Modal from '../components/common/Modal';
 import Pagination from '../components/common/Pagination';
 import { useAuth } from '../contexts/AuthContext';
-import { Plus, Search, Pencil, Trash2, Wrench, Building2, Calendar, DollarSign, Hammer } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Wrench, Building2, DollarSign, Hammer } from 'lucide-react';
 import StatCard from '../components/common/StatCard';
 import { getEquipmentMaintenance, createEquipmentMaintenance, updateEquipmentMaintenance, getAllLaboratoryEquipment } from '../lib/laboratory';
 import { getAllHospitals } from '../lib/hospitals';
@@ -34,7 +34,8 @@ export default function MaintenanceRecordsPage() {
     }
   };
 
-  useEffect(() => { loadData(); }, []);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadData(); }, [loadData]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadData(); };
 

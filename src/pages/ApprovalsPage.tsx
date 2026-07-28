@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Search, CheckCircle, XCircle, ArrowLeft, ChevronDown, ClipboardCheck, Clock, AlertTriangle, MessageSquare, UserCheck, ThumbsUp, ThumbsDown, RotateCcw } from 'lucide-react';
+import { Search, CheckCircle, XCircle, ClipboardCheck, Clock, AlertTriangle, MessageSquare, UserCheck, ThumbsUp, ThumbsDown, RotateCcw } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { getApprovals, approveRequest, rejectRequest, returnRequest, getApprovalComments, addApprovalComment, getApprovalsSummary } from '../lib/approvals';
+import { getApprovals, approveRequest, rejectRequest, returnRequest, getApprovalComments, getApprovalsSummary } from '../lib/approvals';
 import { getHospitalScope } from '../lib/scope';
 import Modal from '../components/common/Modal';
 import Pagination from '../components/common/Pagination';
@@ -55,7 +55,8 @@ export default function ApprovalsPage() {
     } catch {}
   };
 
-  useEffect(() => { loadData(); loadSummary(); }, [filterStatus, filterEntityType]);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadData(); loadSummary(); }, [filterStatus, filterEntityType, loadData, loadSummary]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadData(); };
 
@@ -101,16 +102,6 @@ export default function ApprovalsPage() {
       case 'rejected': return <XCircle size={14} className="text-red-500" />;
       case 'returned': return <RotateCcw size={14} className="text-blue-500" />;
       default: return null;
-    }
-  };
-
-  const statusBadge = (status: string) => {
-    switch (status) {
-      case 'pending': return 'badge-active';
-      case 'approved': return 'badge-active';
-      case 'rejected': return 'badge-inactive';
-      case 'returned': return 'badge-inactive';
-      default: return 'badge-inactive';
     }
   };
 

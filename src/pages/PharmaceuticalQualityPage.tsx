@@ -3,7 +3,7 @@ import type { Pagination as PaginationType } from '../types';
 import Modal from '../components/common/Modal';
 import Pagination from '../components/common/Pagination';
 import { useAuth } from '../contexts/AuthContext';
-import { Plus, Search, Pencil, Trash2, ShieldCheck, Building2, Calendar, FileText } from 'lucide-react';
+import { Plus, Search, Pencil, ShieldCheck, Building2, Calendar, FileText } from 'lucide-react';
 import StatCard from '../components/common/StatCard';
 import { getPharmaceuticalQualityReports, createPharmaceuticalQualityReport, updatePharmaceuticalQualityReport } from '../lib/pharmaceutical';
 import { getAllHospitals } from '../lib/hospitals';
@@ -33,7 +33,8 @@ export default function PharmaceuticalQualityPage() {
     }
   };
 
-  useEffect(() => { loadData(); }, []);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadData(); }, [loadData]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadData(); };
 

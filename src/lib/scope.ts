@@ -1,5 +1,3 @@
-import type { User } from '../types';
-
 const HOSPITAL_SCOPED_ROLES = [
   'hospital_admin',
   'hr_officer',
@@ -10,7 +8,7 @@ const HOSPITAL_SCOPED_ROLES = [
   'prs_admin',
 ];
 
-export function getHospitalScope(user: Pick<User, 'role' | 'hospital_id'> | null): string | undefined {
+export function getHospitalScope(user: { role: string; hospital_id?: string | null } | null): string | undefined {
   if (!user?.hospital_id) return undefined;
   return HOSPITAL_SCOPED_ROLES.includes(user.role) ? user.hospital_id : undefined;
 }
