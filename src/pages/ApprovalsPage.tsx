@@ -55,8 +55,7 @@ export default function ApprovalsPage() {
     } catch {}
   };
 
-// eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { loadData(); loadSummary(); }, [filterStatus, filterEntityType, loadData, loadSummary]);
+  useEffect(() => { loadData(); loadSummary(); }, [filterStatus, filterEntityType]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadData(); };
 

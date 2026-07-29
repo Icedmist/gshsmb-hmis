@@ -35,7 +35,6 @@ export default function TransfersPage() {
     }
   };
 
-// eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadTransfers(); }, []);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadTransfers(); };

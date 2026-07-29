@@ -251,8 +251,7 @@ export default function DashboardPage() {
         return () => clearInterval(interval);
       }
     }
-// eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadDashboardData]);
+  }, []);
 
   useEffect(() => {
     if (hasRole('super_admin', 'executive_secretary', 'hospital_admin', 'hr_officer', 'director_hr')) return;

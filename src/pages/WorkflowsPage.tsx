@@ -47,7 +47,6 @@ export default function WorkflowsPage() {
     } catch {}
   };
 
-// eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadData(); loadSummary(); }, [filterStatus]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadData(); };

@@ -45,8 +45,7 @@ export default function NursingTrainingPage() {
     }
   };
 
-// eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { loadItems(); }, [tab, loadItems]);
+  useEffect(() => { loadItems(); }, [tab]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadItems(); };
 

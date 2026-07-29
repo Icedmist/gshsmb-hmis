@@ -37,8 +37,7 @@ export default function ClinicalAuditsPage() {
     }
   };
 
-// eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => { loadData(); }, []);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadData(); };
 

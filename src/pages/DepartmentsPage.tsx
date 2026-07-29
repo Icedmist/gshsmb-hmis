@@ -56,8 +56,7 @@ export default function DepartmentsPage() {
       setHospitals((data || []).map((h: any) => ({ id: h.id, hospital_name: h.hospital_name, hospital_code: h.hospital_code })));
     } catch {}
   };
-// eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { loadDepartments(); loadHospitals(); }, [loadDepartments, loadHospitals]);
+  useEffect(() => { loadDepartments(); loadHospitals(); }, []);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadDepartments(); };
 

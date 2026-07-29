@@ -36,8 +36,7 @@ export default function LocumAssignmentsPage() {
     } finally { setLoading(false); }
   };
 
-// eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { loadItems(); }, [tab, statusFilter, hospitalScope, loadItems]);
+  useEffect(() => { loadItems(); }, [tab, statusFilter, hospitalScope]);
 
   const formatDate = (d: any) => {
     if (!d) return '—';

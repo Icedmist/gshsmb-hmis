@@ -61,19 +61,14 @@ export default function EmployeesPage() {
     } catch (err: any) { console.error('Failed to load reference data:', err); }
   };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadEmployees(); loadReferenceData(); }, []);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     loadEmployees();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hospitalFilter]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (showModal) loadReferenceData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showModal]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadEmployees(); };

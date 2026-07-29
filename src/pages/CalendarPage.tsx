@@ -52,8 +52,7 @@ export default function CalendarPage() {
     try { const data = await getAllHospitals(hospitalScope); setHospitals((data || []).map((h: any) => ({ id: h.id, hospital_name: h.hospital_name }))); } catch {}
   };
 
-// eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { loadItems(); loadHospitals(); }, [typeFilter, loadItems, loadHospitals]);
+  useEffect(() => { loadItems(); loadHospitals(); }, [typeFilter]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadItems(); };
 

@@ -55,8 +55,7 @@ export default function DocumentsPage() {
     }
   };
 
-// eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { loadData(); }, [filterType, filterStatus, loadData]);
+  useEffect(() => { loadData(); }, [filterType, filterStatus]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadData(); };
 

@@ -49,8 +49,7 @@ export default function ActivityTimelinePage() {
     } finally { setLoading(false); }
   };
 
-// eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { loadItems(); }, [entityFilter, actionFilter, loadItems]);
+  useEffect(() => { loadItems(); }, [entityFilter, actionFilter]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadItems(); };
 

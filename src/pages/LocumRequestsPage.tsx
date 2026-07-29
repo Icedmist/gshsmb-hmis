@@ -46,8 +46,7 @@ export default function LocumRequestsPage() {
     } finally { setLoading(false); }
   };
 
-// eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { loadItems(); }, [statusFilter, hospitalScope, loadItems]);
+  useEffect(() => { loadItems(); }, [statusFilter, hospitalScope]);
 
   const loadHospitals = async () => {
     try { const d = await getAllHospitals(); setHospitals((d || []).map(h => ({ id: h.id, hospital_name: h.hospital_name }))); } catch {}

@@ -21,8 +21,7 @@ export default function AuditLogsPage() {
     }
   };
 
-// eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { loadLogs(); }, [loadLogs]);
+  useEffect(() => { loadLogs(); }, []);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadLogs(); };
 

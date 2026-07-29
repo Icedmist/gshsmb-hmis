@@ -51,14 +51,11 @@ export default function TasksPage() {
     try { const data = await getAllHospitals(hospitalScope); setHospitals((data || []).map((h: any) => ({ id: h.id, hospital_name: h.hospital_name }))); } catch {}
   };
 
-// eslint-disable-next-line react-hooks/exhaustive-deps
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadItems(); loadHospitals(); }, [statusFilter, viewMode]);
 
   useEffect(() => {
     const interval = setInterval(() => loadItems(pagination.page), 30000);
     return () => clearInterval(interval);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter, viewMode, pagination.page]);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadItems(); };

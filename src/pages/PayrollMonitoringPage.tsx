@@ -23,7 +23,6 @@ export default function PayrollMonitoringPage() {
     setHospitals(h);
     setLoading(false);
   };
-// eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, [load]);
 
   const handleSubmit = async (e: any) => {

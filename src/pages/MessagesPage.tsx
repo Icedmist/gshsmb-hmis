@@ -58,8 +58,7 @@ export default function MessagesPage() {
     if (tab === 'messages') loadThreads();
     const interval = setInterval(() => { if (tab === 'messages') loadThreads(); }, 15000);
     return () => clearInterval(interval);
-// eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, user, loadThreads]);
+  }, [tab, user]);
 
   useEffect(() => {
     (async () => {

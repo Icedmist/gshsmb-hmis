@@ -36,7 +36,6 @@ export default function ResearchProjectsPage() {
     }
   };
 
-// eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadProjects(); }, []);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadProjects(); };

@@ -33,7 +33,6 @@ export default function SpecialistsPage() {
     }
   };
 
-// eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadData(); }, []);
 
   const handleSearch = (e: React.FormEvent) => { e.preventDefault(); loadData(); };
