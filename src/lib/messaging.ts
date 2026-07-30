@@ -1,4 +1,4 @@
-import { addDocument, getDocsPaginated, updateDocument, deleteDocument, getDocById } from './firestore';
+import { addDocument, getDocsPaginated, updateDocument, deleteDocument, getDocById, subscribeToDocs } from './firestore';
 import type { FilterConstraint } from './firestore';
 import type { Message, MessageThread, Announcement } from '../types';
 
@@ -118,3 +118,21 @@ export const getUnreadMessageCount = async (userId: string): Promise<number> => 
   }
   return count;
 };
+
+export const subscribeToThreads = (
+  userId: string,
+  onUpdate: (threads: MessageThread[]) => void,
+  hospitalScope?: string
+) => {
+  const filters: FilterConstraint[] = [{ field: 'participants', op: 'array-contains', value: userId }];
+  if (hospitalScope) filters.push({ field: 'hospital_id', op: '==', value: hospitalScope });
+  return subscribeToDocs('message_threads', filters, { field: 'last_message_at', dir: 'desc' }, 50, onUpdate);
+};
+
+export const subscribeToMessages = (
+  threadId: string,
+  onUpdate: (messages: Message[]) => void
+) => {
+  return subscribeToDocs('messages', [{ field: 'thread_id', op: '==', value: threadId }], { field: 'created_at', dir: 'asc' }, 500, onUpdate);
+};
+

@@ -14,8 +14,8 @@ import {
   Bell, ListTodo, MessageSquare,
 } from 'lucide-react';
 import { UserRole } from '../../types';
-import { getUnreadCount } from '../../lib/notifications';
-import { getUnreadMessageCount } from '../../lib/messaging';
+import { getUnreadCount, subscribeToNotifications } from '../../lib/notifications';
+import { getUnreadMessageCount, subscribeToThreads } from '../../lib/messaging';
 import { getPendingLocumCount, getOpenStaffingCount } from '../../lib/locums';
 import logoSrc from '../../assets/logo.jpeg';
 
@@ -154,20 +154,44 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
 
   useEffect(() => {
     if (!user?.id) return;
-    const fetchBadges = async () => {
+
+    // 1. Subscribe to Notifications (Real-time)
+    const unsubNotifs = subscribeToNotifications(user.id, (notifData) => {
+      setBadges(prev => ({ ...prev, notifications: notifData.unread }));
+    }, true);
+
+    // 2. Subscribe to Message Threads to get real-time unread messages count
+    const unsubThreads = subscribeToThreads(user.id, async (threads) => {
       try {
-        const [notifCount, msgCount, locumCount, staffingCount] = await Promise.all([
-          getUnreadCount(user.id),
-          getUnreadMessageCount(user.id),
+        let count = 0;
+        // Fetch message counts sequentially or in parallel for active threads
+        const { getDocsPaginated } = await import('../../lib/firestore');
+        for (const t of threads) {
+          const { data: msgs } = await getDocsPaginated('messages', [{ field: 'thread_id', op: '==', value: t.id }], undefined, 500, 1);
+          count += msgs.filter((m: any) => !m.read_by.includes(user.id)).length;
+        }
+        setBadges(prev => ({ ...prev, messages: count }));
+      } catch {}
+    });
+
+    // 3. Fallback polling for locum & staffing counts (slower, 15s interval)
+    const fetchLocumStaffing = async () => {
+      try {
+        const [locumCount, staffingCount] = await Promise.all([
           getPendingLocumCount(user.hospital_id || ''),
           getOpenStaffingCount(),
         ]);
-        setBadges({ notifications: notifCount, messages: msgCount, locum_requests: locumCount, staffing_requests: staffingCount });
+        setBadges(prev => ({ ...prev, locum_requests: locumCount, staffing_requests: staffingCount }));
       } catch { /* ignore */ }
     };
-    fetchBadges();
-    const interval = setInterval(fetchBadges, 10000);
-    return () => clearInterval(interval);
+    fetchLocumStaffing();
+    const interval = setInterval(fetchLocumStaffing, 15000);
+
+    return () => {
+      unsubNotifs();
+      unsubThreads();
+      clearInterval(interval);
+    };
   }, [user?.id, user?.hospital_id]);
 
   return (

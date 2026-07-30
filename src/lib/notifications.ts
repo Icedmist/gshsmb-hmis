@@ -1,4 +1,4 @@
-import { addDocument, getDocsPaginated, updateDocument, deleteDocument } from './firestore';
+import { addDocument, getDocsPaginated, updateDocument, deleteDocument, subscribeToDocs } from './firestore';
 import type { FilterConstraint } from './firestore';
 import type { Notification, NotificationSetting } from '../types';
 
@@ -58,4 +58,24 @@ export const saveNotificationSettings = async (userId: string, settings: Partial
   } else {
     await addDocument('notification_settings', { user_id: userId, email_notifications: true, in_app_notifications: true, types: {}, ...settings });
   }
+};
+
+export const subscribeToNotifications = (
+  userId: string,
+  onUpdate: (data: { data: Notification[]; unread: number }) => void,
+  unreadOnly = false
+) => {
+  const filters: FilterConstraint[] = [{ field: 'user_id', op: '==', value: userId }];
+  if (unreadOnly) filters.push({ field: 'read', op: '==' as const, value: false });
+  
+  return subscribeToDocs(
+    'notifications',
+    filters,
+    { field: 'created_at', dir: 'desc' as const },
+    50,
+    (docs) => {
+      const unreadCount = docs.filter(n => !n.read).length;
+      onUpdate({ data: docs, unread: unreadCount });
+    }
+  );
 };

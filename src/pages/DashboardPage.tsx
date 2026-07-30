@@ -120,7 +120,12 @@ export default function DashboardPage() {
       ]);
       const [s, eph, epd, re, rt, hospitals, kpis, clinicalAudits, nursingAudits, research] = results.map(r => r.status === 'fulfilled' ? r.value : undefined);
       if (s) setStats(s as DashboardStats);
-      if (eph) setEmpPerHospital((eph as any[]).map(h => ({ name: h.hospital_name, value: parseInt(h.employee_count) })));
+      
+      if (hospitalScope) {
+        if (epd) setEmpPerHospital((epd as any[]).map(d => ({ name: d.department_name, value: parseInt(d.employee_count) })));
+      } else {
+        if (eph) setEmpPerHospital((eph as any[]).map(h => ({ name: h.hospital_name, value: parseInt(h.employee_count) })));
+      }
 
       if (re) setRecentEmployees(Array.isArray(re) ? re : []);
       if (rt) setRecentTransfers(Array.isArray(rt) ? rt : []);
@@ -751,7 +756,9 @@ export default function DashboardPage() {
             <div className="card-header bg-gradient-to-r from-sky-50/50 to-transparent">
               <h3 className="font-semibold text-slate-900 flex items-center gap-2">
                 <BarChart3 size={18} className="text-sky-600" />
-                <span className="text-sky-700">Employees Per Hospital</span>
+                <span className="text-sky-700">
+                  {user?.hospital_id ? 'Employees Per Department' : 'Employees Per Hospital'}
+                </span>
               </h3>
               <Link to="/employees" className="text-xs text-sky-600 hover:text-sky-700 font-medium flex items-center gap-1 transition-colors">
                 View All <ArrowUpRight size={12} />

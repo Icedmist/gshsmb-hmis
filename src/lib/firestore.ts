@@ -15,6 +15,8 @@ import {
   DocumentData,
   QueryConstraint,
   DocumentSnapshot,
+  onSnapshot,
+  Unsubscribe,
 } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -223,3 +225,60 @@ export const searchDocs = async (
   const snap = await getDocs(q);
   return snap.docs.map(docToData);
 };
+
+export const subscribeToDocs = (
+  col: string,
+  filters: FilterConstraint[] = [],
+  orderByField: OrderConstraint | undefined,
+  limitVal: number | undefined,
+  onUpdate: (data: any[]) => void,
+  onError?: (err: Error) => void
+): Unsubscribe => {
+  let fallbackUnsubscribe: Unsubscribe | undefined;
+  
+  try {
+    const constraints = buildQueryConstraints(filters, orderByField);
+    if (limitVal) {
+      constraints.push(firestoreLimit(limitVal));
+    }
+    const q = query(collection(db, col), ...constraints);
+    const mainUnsubscribe = onSnapshot(q, (snap: any) => {
+      onUpdate(snap.docs.map(docToData));
+    }, (err) => {
+      // Fallback: If missing composite index, subscribe without orderBy and sort in JS
+      if (err.code === 'failed-precondition' && orderByField) {
+        console.warn(`Falling back to client-side sort for subscribeToDocs in "${col}" due to missing index:`, err.message);
+        const fallbackConstraints = buildQueryConstraints(filters);
+        const fallbackQuery = query(collection(db, col), ...fallbackConstraints);
+        fallbackUnsubscribe = onSnapshot(fallbackQuery, (fallbackSnap: any) => {
+          let list = fallbackSnap.docs.map(docToData);
+          const dir = orderByField.dir || 'asc';
+          list.sort((a: any, b: any) => {
+            const aVal = a[orderByField.field] ?? '';
+            const bVal = b[orderByField.field] ?? '';
+            return dir === 'desc'
+              ? String(bVal).localeCompare(String(aVal))
+              : String(aVal).localeCompare(String(bVal));
+          });
+          if (limitVal) {
+            list = list.slice(0, limitVal);
+          }
+          onUpdate(list);
+        }, onError);
+      } else {
+        if (onError) onError(err);
+      }
+    });
+
+    return () => {
+      mainUnsubscribe();
+      if (fallbackUnsubscribe) {
+        fallbackUnsubscribe();
+      }
+    };
+  } catch (err: any) {
+    if (onError) onError(err);
+    return () => {};
+  }
+};
+
