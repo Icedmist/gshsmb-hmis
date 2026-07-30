@@ -44,32 +44,32 @@ export default function TopNav({ onMenuClick }: TopNavProps) {
 
   return (
     <>
-      <header className="h-16 bg-white/80 backdrop-blur-xl border-b border-slate-200/60 flex items-center justify-between px-4 lg:px-6 sticky top-0 z-30">
+      <header className="h-16 bg-gradient-to-r from-emerald-950 via-emerald-900 to-teal-900 shadow-md flex items-center justify-between px-4 lg:px-6 sticky top-0 z-30 border-b border-emerald-800">
         <div className="flex items-center gap-4">
           <button
             onClick={onMenuClick}
-            className="lg:hidden text-slate-500 hover:text-slate-700 p-2 rounded-xl hover:bg-slate-100 transition-colors"
+            className="lg:hidden text-emerald-100 hover:text-white p-2 rounded-xl hover:bg-white/10 transition-colors"
           >
             <Menu size={20} />
           </button>
           <div className="hidden lg:flex items-center gap-3">
             <div className="w-2 h-2 rounded-full relative">
-              <div className="absolute inset-0 rounded-full bg-[#008751] animate-ping opacity-30" />
-              <div className="absolute inset-0 rounded-full bg-emerald-500" />
+              <div className="absolute inset-0 rounded-full bg-amber-400 animate-ping opacity-40" />
+              <div className="absolute inset-0 rounded-full bg-amber-400" />
             </div>
-            <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider">
+            <span className="text-xs text-emerald-200 font-semibold uppercase tracking-wider">
               {user?.role?.replace(/_/g, ' ')}
             </span>
             {hospitalName && (
               <>
-                <div className="w-px h-4 bg-slate-200 mx-1" />
-                <span className="text-xs text-slate-500 flex items-center gap-1">
-                  <Building2 size={12} /> {hospitalName}
+                <div className="w-px h-4 bg-emerald-700 mx-1" />
+                <span className="text-xs text-emerald-100 flex items-center gap-1 font-medium">
+                  <Building2 size={12} className="text-amber-400" /> {hospitalName}
                 </span>
               </>
             )}
-            <div className="w-px h-4 bg-slate-200 mx-1" />
-            <span className="text-xs text-slate-400 tabular-nums">
+            <div className="w-px h-4 bg-emerald-700 mx-1" />
+            <span className="text-xs text-emerald-300/70 tabular-nums font-medium">
               {new Date().toLocaleDateString('en-NG', { weekday: 'short', month: 'short', day: 'numeric' })}
             </span>
           </div>
@@ -78,34 +78,34 @@ export default function TopNav({ onMenuClick }: TopNavProps) {
         <div className="flex items-center gap-3">
           <Link
             to="/settings"
-            className="hidden sm:flex items-center gap-2 text-xs text-slate-500 hover:text-slate-700 px-3 py-2 rounded-xl hover:bg-slate-100 transition-colors font-medium"
+            className="hidden sm:flex items-center gap-2 text-xs text-emerald-100 hover:text-white px-3 py-2 rounded-xl hover:bg-white/10 transition-colors font-medium"
           >
-            <Shield size={14} className="text-[#008751]" />
+            <Shield size={14} className="text-amber-400" />
             <span>Profile</span>
           </Link>
 
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setShowMenu(!showMenu)}
-              className="flex items-center gap-2.5 text-sm text-slate-700 hover:text-slate-900 transition-all rounded-xl hover:bg-slate-50 pl-2.5 pr-2 py-1.5 border border-transparent hover:border-slate-200 shadow-sm hover:shadow"
+              className="flex items-center gap-2.5 text-sm hover:bg-white/5 transition-all rounded-xl pl-2.5 pr-2 py-1.5 border border-transparent hover:border-emerald-700/50"
             >
               <div className="hidden sm:block text-right">
-                <p className="text-sm font-semibold text-slate-900 leading-tight">{user?.full_name}</p>
-                <p className="text-[11px] text-slate-500 capitalize">
+                <p className="text-sm font-semibold text-white leading-tight">{user?.full_name}</p>
+                <p className="text-[11px] text-emerald-300/80 capitalize">
                   {user?.role?.replace(/_/g, ' ')}
-                  {hospitalName && <span className="text-emerald-600 ml-1">· {hospitalName}</span>}
+                  {hospitalName && <span className="text-amber-400 ml-1">· {hospitalName}</span>}
                 </p>
               </div>
-              <div className="w-9 h-9 rounded-xl overflow-hidden shadow-sm ring-2 ring-emerald-100 relative bg-gradient-to-br from-emerald-600 to-emerald-800">
+              <div className="w-9 h-9 rounded-xl overflow-hidden shadow-md ring-2 ring-emerald-500/30 relative bg-gradient-to-br from-amber-400 to-amber-600">
                 {user?.avatar_url ? (
                   <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <span className="text-white font-semibold text-sm">{user?.full_name?.charAt(0) || 'U'}</span>
+                    <span className="text-white font-bold text-sm drop-shadow-md">{user?.full_name?.charAt(0) || 'U'}</span>
                   </div>
                 )}
               </div>
-              <ChevronDown size={14} className={`text-slate-400 hidden sm:block transition-transform duration-200 ${showMenu ? 'rotate-180' : ''}`} />
+              <ChevronDown size={14} className={`text-emerald-400 hidden sm:block transition-transform duration-200 ${showMenu ? 'rotate-180' : ''}`} />
             </button>
 
             {showMenu && (

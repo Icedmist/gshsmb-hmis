@@ -356,7 +356,7 @@ export default function DashboardPage() {
         <>
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            <div className="card border-t-2 border-t-emerald-400 shadow-sm hover:shadow-md transition-shadow">
+            <div className="card overflow-hidden group border-0 ring-1 ring-slate-100/60 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-xl hover:ring--200 transition-all duration-300">
               <div className="card-header bg-gradient-to-r from-emerald-50/50 to-transparent">
                 <h3 className="font-semibold text-slate-900 flex items-center gap-2">
                   <Building2 size={16} className="text-emerald-600" />
@@ -383,7 +383,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="lg:col-span-3">
-              <div className="card border-t-2 border-t-sky-400 shadow-sm hover:shadow-md transition-shadow h-full">
+              <div className="card overflow-hidden group border-0 ring-1 ring-slate-100/60 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-xl hover:ring--200 transition-all duration-300">
                 <div className="card-header bg-gradient-to-r from-sky-50/50 to-transparent">
                   <h3 className="font-semibold text-slate-900 flex items-center gap-2">
                     <BarChart3 size={18} className="text-sky-600" />
@@ -422,7 +422,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="card border-t-2 border-t-slate-400 shadow-sm">
+          <div className="card overflow-hidden group border-0 ring-1 ring-slate-100/60 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-xl hover:ring--200 transition-all duration-300">
             <div className="card-header bg-gradient-to-r from-slate-50/50 to-transparent">
               <h3 className="font-semibold text-slate-900 flex items-center gap-2">
                 <Layers size={16} className="text-slate-600" />
@@ -443,7 +443,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="card border-t-2 border-t-emerald-400 shadow-sm">
+          <div className="card overflow-hidden group border-0 ring-1 ring-slate-100/60 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-xl hover:ring--200 transition-all duration-300">
             <div className="card-header bg-gradient-to-r from-emerald-50/50 to-transparent">
               <h3 className="font-semibold text-slate-900 flex items-center gap-2">
                 <Pill size={16} className="text-emerald-600" />
@@ -477,7 +477,7 @@ export default function DashboardPage() {
           </div>
 
           {financeStats && (
-            <div className="card border-t-2 border-t-amber-400 shadow-sm">
+            <div className="card overflow-hidden group border-0 ring-1 ring-slate-100/60 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-xl hover:ring--200 transition-all duration-300">
               <div className="card-header bg-gradient-to-r from-amber-50/50 to-transparent">
                 <h3 className="font-semibold text-slate-900 flex items-center gap-2">
                   <DollarSign size={16} className="text-amber-600" />
@@ -503,7 +503,7 @@ export default function DashboardPage() {
       {isExecSec && (
         <>
 
-          <div className="card border-t-2 border-t-emerald-400 shadow-sm">
+          <div className="card overflow-hidden group border-0 ring-1 ring-slate-100/60 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-xl hover:ring--200 transition-all duration-300">
             <div className="card-header bg-gradient-to-r from-emerald-50/50 to-transparent">
               <h3 className="font-semibold text-slate-900 flex items-center gap-2">
                 <TrendingUp size={16} className="text-emerald-600" />
@@ -524,7 +524,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="card border-t-2 border-t-sky-400 shadow-sm">
+          <div className="card overflow-hidden group border-0 ring-1 ring-slate-100/60 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-xl hover:ring--200 transition-all duration-300">
             <div className="card-header bg-gradient-to-r from-sky-50/50 to-transparent">
               <h3 className="font-semibold text-slate-900 flex items-center gap-2">
                 <Users size={16} className="text-sky-600" />
@@ -544,7 +544,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="card border-t-2 border-t-amber-400 shadow-sm hover:shadow-md transition-shadow">
+            <div className="card overflow-hidden group border-0 ring-1 ring-slate-100/60 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-xl hover:ring--200 transition-all duration-300">
               <div className="card-header bg-gradient-to-r from-amber-50/50 to-transparent">
                 <h3 className="font-semibold text-slate-900 flex items-center gap-2">
                   <Building2 size={16} className="text-amber-600" />
@@ -581,7 +581,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="card border-t-2 border-t-emerald-400 shadow-sm hover:shadow-md transition-shadow">
+            <div className="card overflow-hidden group border-0 ring-1 ring-slate-100/60 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-xl hover:ring--200 transition-all duration-300">
               <div className="card-header bg-gradient-to-r from-emerald-50/50 to-transparent">
                 <h3 className="font-semibold text-slate-900 flex items-center gap-2">
                   <Target size={16} className="text-emerald-600" />
@@ -628,7 +628,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="card border-t-2 border-t-slate-400 shadow-sm">
+          <div className="card overflow-hidden group border-0 ring-1 ring-slate-100/60 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-xl hover:ring--200 transition-all duration-300">
             <div className="card-header bg-gradient-to-r from-slate-50/50 to-transparent">
               <h3 className="font-semibold text-slate-900 flex items-center gap-2">
                 <Layers size={16} className="text-slate-600" />
@@ -654,7 +654,7 @@ export default function DashboardPage() {
                     { label: 'Generated Reports', value: generatedReportCount },
                   ]},
                 ].map(section => (
-                  <div key={section.title} className={`card border-t-2 border-t-${section.color}-400 shadow-sm`}>
+                  <div key={section.title} className={`card overflow-hidden group border-0 ring-1 ring-slate-100/60 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-xl hover:ring-${section.color}-200 transition-all duration-300`}>
                     <div className={`card-header bg-gradient-to-r from-${section.color}-50/50 to-transparent`}>
                       <h3 className="font-semibold text-slate-900 flex items-center gap-2">
                         <section.icon size={16} className={`text-${section.color}-600`} />
@@ -676,7 +676,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="card border-t-2 border-t-emerald-400 shadow-sm">
+          <div className="card overflow-hidden group border-0 ring-1 ring-slate-100/60 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-xl hover:ring--200 transition-all duration-300">
             <div className="card-header bg-gradient-to-r from-emerald-50/50 to-transparent">
               <h3 className="font-semibold text-slate-900 flex items-center gap-2">
                 <Pill size={16} className="text-emerald-600" />
@@ -695,7 +695,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="card border-t-2 border-t-teal-400 shadow-sm">
+          <div className="card overflow-hidden group border-0 ring-1 ring-slate-100/60 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-xl hover:ring--200 transition-all duration-300">
             <div className="card-header bg-gradient-to-r from-teal-50/50 to-transparent">
               <h3 className="font-semibold text-slate-900 flex items-center gap-2">
                 <Microscope size={16} className="text-teal-600" />
@@ -715,7 +715,7 @@ export default function DashboardPage() {
           </div>
 
           {financeStats && (
-            <div className="card border-t-2 border-t-teal-400 shadow-sm">
+            <div className="card overflow-hidden group border-0 ring-1 ring-slate-100/60 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-xl hover:ring--200 transition-all duration-300">
               <div className="card-header bg-gradient-to-r from-teal-50/50 to-transparent">
                 <h3 className="font-semibold text-slate-900 flex items-center gap-2">
                   <DollarSign size={16} className="text-teal-600" />
@@ -752,7 +752,7 @@ export default function DashboardPage() {
       {isScopeMgr && (
         <>
 
-          <div className="card border-t-2 border-t-sky-400 shadow-sm">
+          <div className="card overflow-hidden group border-0 ring-1 ring-slate-100/60 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-xl hover:ring--200 transition-all duration-300">
             <div className="card-header bg-gradient-to-r from-sky-50/50 to-transparent">
               <h3 className="font-semibold text-slate-900 flex items-center gap-2">
                 <BarChart3 size={18} className="text-sky-600" />
@@ -791,7 +791,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="card border-t-2 border-t-teal-400 shadow-sm">
+              <div className="card overflow-hidden group border-0 ring-1 ring-slate-100/60 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-xl hover:ring--200 transition-all duration-300">
                 <div className="card-header bg-gradient-to-r from-teal-50/50 to-transparent">
                   <h3 className="font-semibold text-slate-900 flex items-center gap-2">
                     <UserPlus size={16} className="text-teal-600" />
@@ -831,7 +831,7 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="card border-t-2 border-t-orange-400 shadow-sm">
+              <div className="card overflow-hidden group border-0 ring-1 ring-slate-100/60 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-xl hover:ring--200 transition-all duration-300">
                 <div className="card-header bg-gradient-to-r from-orange-50/50 to-transparent">
                   <h3 className="font-semibold text-slate-900 flex items-center gap-2">
                     <ArrowRightLeft size={16} className="text-orange-600" />
@@ -869,7 +869,7 @@ export default function DashboardPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {hasRole('hospital_admin') && financeStats && (
-              <div className="card border-t-2 border-t-blue-400 shadow-sm">
+              <div className="card overflow-hidden group border-0 ring-1 ring-slate-100/60 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-xl hover:ring--200 transition-all duration-300">
                 <div className="card-header bg-gradient-to-r from-blue-50/50 to-transparent">
                   <h3 className="font-semibold text-slate-900 flex items-center gap-2">
                     <DollarSign size={16} className="text-blue-600" />
@@ -899,7 +899,7 @@ export default function DashboardPage() {
             )}
 
             {hasRole('hr_officer', 'director_hr') && financeStats && (
-              <div className="card border-t-2 border-t-violet-400 shadow-sm">
+              <div className="card overflow-hidden group border-0 ring-1 ring-slate-100/60 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-xl hover:ring--200 transition-all duration-300">
                 <div className="card-header bg-gradient-to-r from-violet-50/50 to-transparent">
                   <h3 className="font-semibold text-slate-900 flex items-center gap-2">
                     <Wallet size={16} className="text-violet-600" />

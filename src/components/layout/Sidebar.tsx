@@ -199,9 +199,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       {open && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden" onClick={onClose} />
       )}
-      <aside className={`fixed top-0 left-0 z-50 h-full w-64 transform transition-all duration-300 ease-in-out lg:translate-x-0 lg:static lg:z-auto shadow-xl lg:shadow-none flex flex-col ${open ? 'translate-x-0' : '-translate-x-full'}`}
-        style={{ background: '#f1f5ee' }}
-      >
+      <aside className={`fixed top-0 left-0 z-50 h-full w-64 transform transition-all duration-300 ease-in-out lg:translate-x-0 lg:static lg:z-auto shadow-[4px_0_24px_rgba(0,0,0,0.02)] border-r border-slate-200/50 flex flex-col bg-white/70 backdrop-blur-2xl ${open ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="absolute top-0 left-0 right-0 h-1 flex">
           <div className="flex-1 bg-emerald-600" />
           <div className="flex-1 bg-lime-500" />
