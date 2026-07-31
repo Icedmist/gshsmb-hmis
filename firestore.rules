@@ -2,96 +2,91 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function hasUserProfile() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+    
     function getUserProfile() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
     
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-    
     function isAdmin() {
-      return isAuthenticated() && getUserProfile().role == 'super_admin';
+      return hasUserProfile() && getUserProfile().get('role', '') == 'super_admin';
     }
     
     function isHospitalAdmin() {
-      return isAuthenticated() && getUserProfile().role == 'hospital_admin';
+      return hasUserProfile() && getUserProfile().get('role', '') == 'hospital_admin';
     }
     
     function isHROfficer() {
-      return isAuthenticated() && getUserProfile().role == 'hr_officer';
+      return hasUserProfile() && getUserProfile().get('role', '') == 'hr_officer';
     }
     
     function isExecutiveSecretary() {
-      return isAuthenticated() && getUserProfile().role == 'executive_secretary';
-    }
-    
-    function canManage() {
-      return isAdmin() || isHospitalAdmin();
+      return hasUserProfile() && getUserProfile().get('role', '') == 'executive_secretary';
     }
     
     function isHospitalScopedRole() {
       return isHospitalAdmin() || isPharmacyAdmin() || isLabAdmin() || isNursingAdmin() || isMedicalAdmin() || isPRSAdmin();
     }
-
-    function isBoardLevelRole() {
-      return isAdmin() || isExecutiveSecretary() || isDirector() || isHROfficer();
-    }
-
-    function isOwnHospital(resourceHospitalId) {
-      return !isHospitalScopedRole() || getUserProfile().hospital_id == resourceHospitalId;
-    }
     
     function isOwnHospitalData() {
-      return !isHospitalScopedRole() || request.resource.data.hospital_id == getUserProfile().hospital_id;
+      return !isHospitalScopedRole() ||
+             !('hospital_id' in request.resource.data) ||
+             request.resource.data.hospital_id == null ||
+             request.resource.data.hospital_id == getUserProfile().get('hospital_id', null);
     }
     
     function isDirectorNursing() {
-      return isAuthenticated() && getUserProfile().role == 'director_nursing_services';
+      return hasUserProfile() && getUserProfile().get('role', '') == 'director_nursing_services';
     }
     
     function isDirectorMedical() {
-      return isAuthenticated() && getUserProfile().role == 'director_medical_services';
+      return hasUserProfile() && getUserProfile().get('role', '') == 'director_medical_services';
     }
     
     function isDirectorPharmaceutical() {
-      return isAuthenticated() && getUserProfile().role == 'director_pharmaceutical_services';
+      return hasUserProfile() && getUserProfile().get('role', '') == 'director_pharmaceutical_services';
     }
     
     function isDirectorLaboratory() {
-      return isAuthenticated() && getUserProfile().role == 'director_laboratory_services';
+      return hasUserProfile() && getUserProfile().get('role', '') == 'director_laboratory_services';
     }
     
     function isDirectorPRS() {
-      return isAuthenticated() && getUserProfile().role == 'director_prs';
+      return hasUserProfile() && getUserProfile().get('role', '') == 'director_prs';
     }
     
     function isDirectorFinance() {
-      return isAuthenticated() && getUserProfile().role == 'director_finance';
+      return hasUserProfile() && getUserProfile().get('role', '') == 'director_finance';
     }
 
     function isPharmacyAdmin() {
-      return isAuthenticated() && getUserProfile().role == 'pharmacy_admin';
+      return hasUserProfile() && getUserProfile().get('role', '') == 'pharmacy_admin';
     }
 
     function isLabAdmin() {
-      return isAuthenticated() && getUserProfile().role == 'lab_admin';
+      return hasUserProfile() && getUserProfile().get('role', '') == 'lab_admin';
     }
 
     function isNursingAdmin() {
-      return isAuthenticated() && getUserProfile().role == 'nursing_admin';
+      return hasUserProfile() && getUserProfile().get('role', '') == 'nursing_admin';
     }
 
     function isMedicalAdmin() {
-      return isAuthenticated() && getUserProfile().role == 'medical_admin';
+      return hasUserProfile() && getUserProfile().get('role', '') == 'medical_admin';
     }
 
     function isPRSAdmin() {
-      return isAuthenticated() && getUserProfile().role == 'prs_admin';
+      return hasUserProfile() && getUserProfile().get('role', '') == 'prs_admin';
     }
 
     function isDirectorHR() {
-      return isAuthenticated() && getUserProfile().role == 'director_hr';
+      return hasUserProfile() && getUserProfile().get('role', '') == 'director_hr';
     }
 
     function isDirector() {
@@ -108,54 +103,55 @@ service cloud.firestore {
 
     // Users collection
     match /users/{userId} {
-      // Anyone authenticated can read users (for name lookups, etc.)
       allow read: if isAuthenticated();
-      
-      // Only admins can create/update/delete users
-      // Note: User creation via Cloud Functions bypasses security rules
-      allow create: if isAdmin();
-      allow update: if isAdmin() || isOwnUser(userId);
-      allow delete: if isAdmin() && !isOwnUser(userId);
+      allow create: if isAdmin() || isExecutiveSecretary();
+      allow update: if isAdmin() || isExecutiveSecretary() || isOwnUser(userId);
+      allow delete: if (isAdmin() || isExecutiveSecretary()) && !isOwnUser(userId);
     }
 
     // Hospitals collection
     match /hospitals/{hospitalId} {
       allow read: if isAuthenticated();
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow create, update, delete: if isAdmin() || isExecutiveSecretary();
     }
 
     // Departments collection
     match /departments/{deptId} {
       allow read: if isAuthenticated();
-      allow create: if isAdmin() || isHospitalAdmin();
-      allow update: if isAdmin() || isHospitalAdmin();
-      allow delete: if isAdmin() || isHospitalAdmin();
+      allow create, update, delete: if isAdmin() || isExecutiveSecretary() || isHospitalAdmin();
     }
 
     // Employees collection
     match /employees/{empId} {
       allow read: if isAuthenticated();
-      allow create: if isAdmin() || isHospitalAdmin() || isHROfficer();
-      allow update: if isAdmin() || isHospitalAdmin() || isHROfficer();
-      allow delete: if isAdmin();
+      allow create, update: if isAdmin() || isExecutiveSecretary() || isHospitalAdmin() || isHROfficer() || isDirectorHR();
+      allow delete: if isAdmin() || isExecutiveSecretary();
     }
 
     // Employee Transfers collection
     match /employeeTransfers/{transferId} {
       allow read: if isAuthenticated();
-      allow create: if isAdmin() || isHROfficer();
-      allow update: if isAdmin() || isHROfficer();
-      allow delete: if isAdmin();
+      allow create, update: if isAdmin() || isExecutiveSecretary() || isHROfficer() || isDirectorHR();
+      allow delete: if isAdmin() || isExecutiveSecretary();
     }
 
     // Audit Logs collection
     match /auditLogs/{logId} {
-      allow read: if isAdmin();
+      allow read: if isAdmin() || isExecutiveSecretary();
       allow create: if isAuthenticated();
-      allow update: if false;
-      allow delete: if false;
+      allow update, delete: if false;
+    }
+
+    // System Settings collection
+    match /systemSettings/{docId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin() || isExecutiveSecretary();
+    }
+
+    // Announcements collection
+    match /announcements/{docId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin() || isExecutiveSecretary();
     }
 
     // Password Reset Tokens (legacy, not used with Firebase Auth)
@@ -172,79 +168,73 @@ service cloud.firestore {
     // Nursing collections
     match /nursingWorkforce/{docId} {
       allow read: if isAuthenticated();
-      allow create: if isAdmin() || isDirectorNursing();
-      allow update: if isAdmin() || isDirectorNursing();
-      allow delete: if isAdmin();
+      allow create, update: if isAdmin() || isExecutiveSecretary() || isDirectorNursing() || isNursingAdmin();
+      allow delete: if isAdmin() || isExecutiveSecretary();
     }
 
     match /nursingAudits/{docId} {
       allow read: if isAuthenticated();
-      allow create: if isAdmin() || isDirectorNursing();
-      allow update: if isAdmin() || isDirectorNursing();
-      allow delete: if isAdmin();
+      allow create, update: if isAdmin() || isExecutiveSecretary() || isDirectorNursing() || isNursingAdmin();
+      allow delete: if isAdmin() || isExecutiveSecretary();
     }
 
     match /nursingSupervisionReports/{docId} {
       allow read: if isAuthenticated();
-      allow create: if isAdmin() || isDirectorNursing();
-      allow update: if isAdmin() || isDirectorNursing();
-      allow delete: if isAdmin();
+      allow create, update: if isAdmin() || isExecutiveSecretary() || isDirectorNursing() || isNursingAdmin();
+      allow delete: if isAdmin() || isExecutiveSecretary();
     }
 
     match /trainingPrograms/{docId} {
       allow read: if isAuthenticated();
-      allow create: if isAdmin() || isDirectorNursing() || isHROfficer();
-      allow update: if isAdmin() || isDirectorNursing() || isHROfficer();
-      allow delete: if isAdmin();
+      allow create, update: if isAdmin() || isExecutiveSecretary() || isDirectorNursing() || isNursingAdmin() || isHROfficer() || isDirectorHR();
+      allow delete: if isAdmin() || isExecutiveSecretary();
     }
 
     match /trainingAttendance/{docId} {
       allow read: if isAuthenticated();
-      allow create: if isAdmin() || isDirectorNursing() || isHROfficer();
-      allow update: if isAdmin() || isDirectorNursing() || isHROfficer();
-      allow delete: if isAdmin();
+      allow create, update: if isAdmin() || isExecutiveSecretary() || isDirectorNursing() || isNursingAdmin() || isHROfficer() || isDirectorHR();
+      allow delete: if isAdmin() || isExecutiveSecretary();
     }
 
     match /certifications/{docId} {
       allow read: if isAuthenticated();
-      allow create: if isAdmin() || isDirectorNursing();
-      allow update: if isAdmin() || isDirectorNursing();
-      allow delete: if isAdmin();
+      allow create, update: if isAdmin() || isExecutiveSecretary() || isDirectorNursing() || isNursingAdmin();
+      allow delete: if isAdmin() || isExecutiveSecretary();
     }
 
     // Catch-all for all other specialty collections
-    // (medical, pharmaceutical, laboratory, PRS, and any future collections)
+    // (medical, pharmaceutical, laboratory, PRS, financial, and any future collections)
     match /{collection}/{docId} {
       allow read: if isAuthenticated();
       allow create: if canManageContent() && isOwnHospitalData();
       allow update: if canManageContent() && isOwnHospitalData();
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() || isExecutiveSecretary();
     }
 
     // --- Collaboration collections ---
 
-    // Notifications: users read/write their own
+    // Notifications: users read/write their own, admins can manage
     match /notifications/{docId} {
-      allow read: if isAuthenticated() && request.auth.uid == resource.data.user_id;
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.user_id || isAdmin() || isExecutiveSecretary());
       allow create: if isAuthenticated();
-      allow update: if isAuthenticated() && request.auth.uid == resource.data.user_id;
-      allow delete: if isAuthenticated() && request.auth.uid == resource.data.user_id;
+      allow update: if isAuthenticated() && (request.auth.uid == resource.data.user_id || isAdmin() || isExecutiveSecretary());
+      allow delete: if isAuthenticated() && (request.auth.uid == resource.data.user_id || isAdmin() || isExecutiveSecretary());
     }
 
-    // Message threads: participants can read/write
+    // Message threads: participants & admins can read/write
     match /message_threads/{docId} {
-      allow read: if isAuthenticated() && resource.data.participants.hasAny([request.auth.uid]);
-      allow create: if isAuthenticated() && request.resource.data.participants.hasAny([request.auth.uid]);
-      allow update: if isAuthenticated() && resource.data.participants.hasAny([request.auth.uid]);
-      allow delete: if isAdmin();
+      allow read: if isAuthenticated() && (resource.data.participants.hasAny([request.auth.uid]) || isAdmin() || isExecutiveSecretary());
+      allow create: if isAuthenticated() && (request.resource.data.participants.hasAny([request.auth.uid]) || isAdmin() || isExecutiveSecretary());
+      allow update: if isAuthenticated() && (resource.data.participants.hasAny([request.auth.uid]) || isAdmin() || isExecutiveSecretary());
+      allow delete: if isAdmin() || isExecutiveSecretary();
     }
 
-    // Messages: participants of the parent thread can read/write
+    // Messages: authenticated users can read/write
     match /messages/{docId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
       allow update: if isAuthenticated();
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() || isExecutiveSecretary();
     }
 
     // Tasks: all authenticated can read, admin/ES can create/update/delete
@@ -260,13 +250,35 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
       allow update: if isAuthenticated();
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() || isExecutiveSecretary();
     }
 
     // Notification settings
     match /notification_settings/{docId} {
       allow read: if isAuthenticated() && request.auth.uid == resource.data.user_id;
       allow write: if isAuthenticated() && request.auth.uid == resource.data.user_id;
+    }
+
+    // Workflows & history
+    match /workflows/{docId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAdmin() || isExecutiveSecretary();
+    }
+
+    match /workflowSteps/{docId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAdmin() || isExecutiveSecretary();
+    }
+
+    match /workflowHistory/{docId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isAdmin() || isExecutiveSecretary();
     }
 
     // ─── Locum / Staffing collections ───
@@ -276,7 +288,7 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
       allow update: if isAuthenticated();
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() || isExecutiveSecretary();
     }
 
     // Locum approvals (tracking approval steps)
@@ -284,7 +296,7 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
       allow update: if isAuthenticated();
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() || isExecutiveSecretary();
     }
 
     // Locum assignments (created after full approval)
@@ -292,7 +304,7 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
       allow update: if isAuthenticated();
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() || isExecutiveSecretary();
     }
 
     // Locum history (completed locums)
@@ -300,7 +312,7 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
       allow update: if isAuthenticated();
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() || isExecutiveSecretary();
     }
 
     // Staffing requests (hospital-initiated requests for staff)
@@ -308,7 +320,7 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
       allow update: if isAuthenticated();
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() || isExecutiveSecretary();
     }
 
     // Staff nominations (nominating staff for open staffing requests)
@@ -316,7 +328,8 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
       allow update: if isAuthenticated();
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() || isExecutiveSecretary();
     }
   }
 }
+
