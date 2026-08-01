@@ -19,7 +19,7 @@ export default function StatisticsPage() {
   const [editStat, setEditStat] = useState<any>(null);
   const [form, setForm] = useState({ hospital_id: '', metric_name: '', value: 0, unit: '', reporting_period: '' });
   const [hospitals, setHospitals] = useState<any[]>([]);
-  const isAdmin = hasRole('super_admin') || hasRole('director_prs') || hasRole('prs_admin');
+  const isAdmin = hasRole('super_admin') || hasRole('director_prs') || hasRole('hospital_admin');
 
   const loadStats = async (page = 1) => {
     setLoading(true);

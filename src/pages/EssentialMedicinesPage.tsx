@@ -9,7 +9,7 @@ import { getEssentialMedicines, createEssentialMedicine, updateEssentialMedicine
 
 export default function EssentialMedicinesPage() {
   const { hasRole } = useAuth();
-  const canManage = hasRole('super_admin', 'pharmacy_admin');
+  const canManage = hasRole('super_admin', 'hospital_admin');
   const [items, setItems] = useState<any[]>([]);
   const [pagination, setPagination] = useState<PaginationType>({ page: 1, limit: 50, total: 0, totalPages: 0 });
   const [search, setSearch] = useState('');

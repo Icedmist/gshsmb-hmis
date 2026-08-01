@@ -43,7 +43,7 @@ const toCsv = (rows: any[]): string => {
 
 export default function ReportsPage() {
   const { hasRole } = useAuth();
-  const canView = hasRole('super_admin', 'executive_secretary', 'hospital_admin', 'hr_officer', 'director_hr', 'director_prs', 'prs_admin');
+  const canView = hasRole('super_admin', 'executive_secretary', 'hospital_admin', 'hr_officer', 'director_hr', 'director_prs', 'hospital_admin');
   const [data, setData] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [activeReport, setActiveReport] = useState<string | null>(null);

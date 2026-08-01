@@ -10,7 +10,7 @@ import { getAllDepartments } from '../lib/departments';
 
 export default function ClinicalGuidelinesPage() {
   const { hasRole } = useAuth();
-  const canManage = hasRole('super_admin', 'medical_admin');
+  const canManage = hasRole('super_admin', 'hospital_admin');
   const [guidelines, setGuidelines] = useState<ClinicalGuideline[]>([]);
   const [departments, setDepartments] = useState<{ id: string; department_name: string }[]>([]);
   const [pagination, setPagination] = useState<PaginationType>({ page: 1, limit: 50, total: 0, totalPages: 0 });

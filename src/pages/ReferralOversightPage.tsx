@@ -15,7 +15,7 @@ type TabType = 'referral' | 'emergency';
 export default function ReferralOversightPage() {
   const { hasRole } = useAuth();
   const location = useLocation();
-  const canManage = hasRole('super_admin', 'hospital_admin', 'medical_admin');
+  const canManage = hasRole('super_admin', 'hospital_admin');
   const [activeTab, setActiveTab] = useState<TabType>(location.pathname === '/emergency-reports' ? 'emergency' : 'referral');
 
   // Referral state

@@ -99,6 +99,8 @@ async function retry<T>(fn: () => Promise<T>, label: string, retries = 3): Promi
   throw new Error('Unreachable');
 }
 
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
 async function initFirebase() {
   let appConfig: any = {};
   const paths = [
@@ -184,13 +186,21 @@ async function main() {
   const { db, auth } = await initFirebase();
   console.log('Ready.\n');
 
+  console.log('Fetching existing users and employees from Firestore...');
+  const usersSnap = await db.collection('users').get();
+  const existingEmails = new Set(usersSnap.docs.map(doc => doc.data().email?.toLowerCase()));
+  
+  const employeesSnap = await db.collection('employees').get();
+  const existingStaffIds = new Set(employeesSnap.docs.map(doc => doc.data().staff_id));
+  console.log(`Loaded ${existingEmails.size} existing users and ${existingStaffIds.size} existing employees.\n`);
+
   const hospitals = parseExcel();
   console.log(`Found ${hospitals.length} hospitals\n`);
 
   let totalH = 0, totalD = 0, totalE = 0, totalU = 0, totalSkippedU = 0;
   const allErrors: string[] = [];
 
-  for (const hosp of hospitals) {
+  for (const [hospIdx, hosp] of hospitals.entries()) {
     process.stdout.write(`${hosp.hospitalName}... `);
     let hospStaffCount = 0;
 
@@ -246,67 +256,77 @@ async function main() {
 
         for (const staff of dept.staff) {
           const email = generateEmail(staff.fullName, hosp.hospitalCode);
+          const staffId = staff.staffId || `TMP_${hosp.hospitalCode}_${slugify(staff.fullName)}`;
 
-          try {
-            await retry(async () => {
-              const empQuery = staff.staffId
-                ? await db.collection('employees').where('staff_id', '==', staff.staffId).limit(1).get()
-                : null;
+          const employeeExists = existingStaffIds.has(staffId);
+          const userExists = existingEmails.has(email.toLowerCase());
 
-              if (empQuery && !empQuery.empty) {
-                const ed = empQuery.docs[0];
-                if (!ed.data().email) {
-                  await ed.ref.update({ email, updated_at: FieldValue.serverTimestamp() });
-                }
-              } else {
+          if (employeeExists && userExists) {
+            totalSkippedU++;
+            hospStaffCount++;
+            continue;
+          }
+
+          // 1. Employee insertion
+          if (!employeeExists) {
+            try {
+              await retry(async () => {
                 await db.collection('employees').add({
-                  staff_id: staff.staffId || `TMP_${hosp.hospitalCode}_${slugify(staff.fullName)}`,
+                  staff_id: staffId,
                   full_name: staff.fullName, gender: staff.gender || '',
                   phone_number: '', email, position,
                   department_id: deptId, hospital_id: hospId,
                   employment_date: '', status: 'active',
                   created_at: FieldValue.serverTimestamp(), updated_at: FieldValue.serverTimestamp(),
                 });
-              }
-              return true;
-            }, 'emp');
-          } catch (e: any) {
-            allErrors.push(`Employee ${staff.fullName}: ${e.message}`);
-            continue;
+                return true;
+              }, 'emp');
+              existingStaffIds.add(staffId);
+              totalE++;
+            } catch (e: any) {
+              allErrors.push(`Employee ${staff.fullName}: ${e.message}`);
+              continue;
+            }
           }
 
-          try {
-            await retry(async () => {
-              let uid: string;
-              try {
-                const userRecord = await auth.createUser({
-                  email, password: DEFAULT_PASSWORD,
-                  displayName: staff.fullName, emailVerified: true,
-                });
-                uid = userRecord.uid;
-              } catch (authErr: any) {
-                if (authErr.code === 'auth/email-already-exists') {
-                  const userRecord = await auth.getUserByEmail(email);
+          // 2. User insertion (Firebase Auth & Firestore Profile)
+          if (!userExists) {
+            // Rate-limit auth user creation to avoid Firebase Auth quota
+            await sleep(200);
+
+            try {
+              await retry(async () => {
+                let uid: string;
+                try {
+                  const userRecord = await auth.createUser({
+                    email, password: DEFAULT_PASSWORD,
+                    displayName: staff.fullName, emailVerified: true,
+                  });
                   uid = userRecord.uid;
-                  totalSkippedU++;
-                } else { throw authErr; }
-              }
+                } catch (authErr: any) {
+                  if (authErr.code === 'auth/email-already-exists') {
+                    const userRecord = await auth.getUserByEmail(email);
+                    uid = userRecord.uid;
+                    totalSkippedU++;
+                  } else { throw authErr; }
+                }
 
-              await db.collection('users').doc(uid).set({
-                firebase_uid: uid, full_name: staff.fullName, email,
-                phone_number: null, role, hospital_id: hospId,
-                avatar_url: null, status: 'active',
-                created_at: FieldValue.serverTimestamp(), updated_at: FieldValue.serverTimestamp(),
-              }, { merge: true });
-              return true;
-            }, 'user');
-          } catch (e: any) {
-            allErrors.push(`User ${staff.fullName} (${email}): ${e.message}`);
-            continue;
+                await db.collection('users').doc(uid).set({
+                  firebase_uid: uid, full_name: staff.fullName, email,
+                  phone_number: null, role, hospital_id: hospId,
+                  avatar_url: null, status: 'active',
+                  created_at: FieldValue.serverTimestamp(), updated_at: FieldValue.serverTimestamp(),
+                }, { merge: true });
+                return true;
+              }, 'user');
+              existingEmails.add(email.toLowerCase());
+              totalU++;
+            } catch (e: any) {
+              allErrors.push(`User ${staff.fullName} (${email}): ${e.message}`);
+              continue;
+            }
           }
 
-          totalE++;
-          totalU++;
           hospStaffCount++;
         }
       }

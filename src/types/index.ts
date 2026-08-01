@@ -1,4 +1,4 @@
-export type UserRole = 'super_admin' | 'executive_secretary' | 'hospital_admin' | 'hr_officer' | 'director_hr' | 'director_medical_services' | 'director_nursing_services' | 'director_prs' | 'director_pharmaceutical_services' | 'director_laboratory_services' | 'director_finance' | 'lab_admin' | 'pharmacy_admin' | 'nursing_admin' | 'medical_admin' | 'prs_admin';
+export type UserRole = 'super_admin' | 'executive_secretary' | 'hospital_admin' | 'hr_officer' | 'director_hr' | 'director_medical_services' | 'director_nursing_services' | 'director_prs' | 'director_pharmaceutical_services' | 'director_laboratory_services' | 'director_finance';
 export type EntityStatus = 'active' | 'inactive' | 'suspended';
 export type EmployeeStatus = 'active' | 'inactive' | 'suspended';
 export type TransferStatus = 'pending' | 'approved' | 'rejected';
@@ -1208,12 +1208,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   director_pharmaceutical_services: 'Director Pharmaceutical Services',
   director_laboratory_services: 'Director Medical Laboratory Services',
   director_finance: 'Director Finance and Accounts',
-  lab_admin: 'Lab Admin',
-  pharmacy_admin: 'Pharmacy Admin',
-  nursing_admin: 'Nursing Admin',
-  medical_admin: 'Medical Admin',
-  prs_admin: 'PRS Admin',
-};
+          };
 
 export const ROLE_OPTIONS = [
   { value: 'super_admin', label: 'Super Admin' },

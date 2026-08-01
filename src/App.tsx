@@ -35,11 +35,9 @@ import KPIPage from './pages/KPIPage';
 import ScorecardsPage from './pages/ScorecardsPage';
 import StatisticsPage from './pages/StatisticsPage';
 import ResearchProjectsPage from './pages/ResearchProjectsPage';
-import MedicalDashboardPage from './pages/MedicalDashboardPage';
-import NursingDashboardPage from './pages/NursingDashboardPage';
-import PRSDashboardPage from './pages/PRSDashboardPage';
+
 import PerformanceIndicatorsPage from './pages/PerformanceIndicatorsPage';
-import PharmaceuticalDashboardPage from './pages/PharmaceuticalDashboardPage';
+
 import MedicineRegistryPage from './pages/MedicineRegistryPage';
 import EssentialMedicinesPage from './pages/EssentialMedicinesPage';
 import PharmaceuticalAuditsPage from './pages/PharmaceuticalAuditsPage';
@@ -47,7 +45,7 @@ import PharmaceuticalWorkforcePage from './pages/PharmaceuticalWorkforcePage';
 import PharmaceuticalQualityPage from './pages/PharmaceuticalQualityPage';
 import PharmacovigilancePage from './pages/PharmacovigilancePage';
 import PharmaceuticalReportsPage from './pages/PharmaceuticalReportsPage';
-import LaboratoryDashboardPage from './pages/LaboratoryDashboardPage';
+
 import LaboratoryRegistryPage from './pages/LaboratoryRegistryPage';
 import LaboratoryAuditsPage from './pages/LaboratoryAuditsPage';
 import LaboratoryWorkforcePage from './pages/LaboratoryWorkforcePage';
@@ -112,10 +110,7 @@ export default function App() {
             <Route path="/performance-indicators" element={<PerformanceIndicatorsPage />} />
             <Route path="/statistics" element={<StatisticsPage />} />
             <Route path="/research" element={<ResearchProjectsPage />} />
-            <Route path="/medical-dashboard" element={<MedicalDashboardPage />} />
-            <Route path="/nursing-dashboard" element={<NursingDashboardPage />} />
-            <Route path="/prs-dashboard" element={<PRSDashboardPage />} />
-            <Route path="/pharmaceutical-dashboard" element={<PharmaceuticalDashboardPage />} />
+
             <Route path="/medicine-registry" element={<MedicineRegistryPage />} />
             <Route path="/essential-medicines" element={<EssentialMedicinesPage />} />
             <Route path="/pharmaceutical-audits" element={<PharmaceuticalAuditsPage />} />
@@ -123,7 +118,7 @@ export default function App() {
             <Route path="/pharmaceutical-quality" element={<PharmaceuticalQualityPage />} />
             <Route path="/pharmacovigilance" element={<PharmacovigilancePage />} />
             <Route path="/pharmaceutical-reports" element={<PharmaceuticalReportsPage />} />
-            <Route path="/laboratory-dashboard" element={<LaboratoryDashboardPage />} />
+
             <Route path="/laboratory-registry" element={<LaboratoryRegistryPage />} />
             <Route path="/laboratory-audits" element={<LaboratoryAuditsPage />} />
             <Route path="/laboratory-workforce" element={<LaboratoryWorkforcePage />} />

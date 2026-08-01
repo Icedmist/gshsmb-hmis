@@ -36,12 +36,22 @@ export const getEmployeesPerHospital = async (hospitalScope?: string): Promise<a
 
   const hospitals = await getDocsAll('hospitals', hospFilters, { field: 'hospital_name', dir: 'asc' });
 
-  return Promise.all(
-    hospitals.map(async (h: any) => {
-      const empCount = await countDocs('employees', [{ field: 'hospital_id', op: '==', value: h.id }]);
-      return { id: h.id, hospital_name: h.hospital_name, employee_count: empCount };
-    })
-  );
+  const empFilters: FilterConstraint[] = [];
+  if (hospitalScope) empFilters.push({ field: 'hospital_id', op: '==', value: hospitalScope });
+  const employees = await getDocsAll('employees', empFilters);
+
+  const countMap: Record<string, number> = {};
+  for (const emp of employees) {
+    if (emp.hospital_id) {
+      countMap[emp.hospital_id] = (countMap[emp.hospital_id] || 0) + 1;
+    }
+  }
+
+  return hospitals.map((h: any) => ({
+    id: h.id,
+    hospital_name: h.hospital_name,
+    employee_count: countMap[h.id] || 0
+  }));
 };
 
 export const getEmployeesPerDepartment = async (hospitalScope?: string): Promise<any[]> => {
@@ -50,12 +60,22 @@ export const getEmployeesPerDepartment = async (hospitalScope?: string): Promise
 
   const departments = await getDocsAll('departments', deptFilters, { field: 'department_name', dir: 'asc' });
 
-  return Promise.all(
-    departments.map(async (d: any) => {
-      const empCount = await countDocs('employees', [{ field: 'department_id', op: '==', value: d.id }]);
-      return { id: d.id, department_name: d.department_name, employee_count: empCount };
-    })
-  );
+  const empFilters: FilterConstraint[] = [];
+  if (hospitalScope) empFilters.push({ field: 'hospital_id', op: '==', value: hospitalScope });
+  const employees = await getDocsAll('employees', empFilters);
+
+  const countMap: Record<string, number> = {};
+  for (const emp of employees) {
+    if (emp.department_id) {
+      countMap[emp.department_id] = (countMap[emp.department_id] || 0) + 1;
+    }
+  }
+
+  return departments.map((d: any) => ({
+    id: d.id,
+    department_name: d.department_name,
+    employee_count: countMap[d.id] || 0
+  }));
 };
 
 export const getRecentActivities = async (hospitalScope?: string): Promise<any[]> => {

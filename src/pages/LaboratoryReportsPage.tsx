@@ -9,7 +9,7 @@ import { getHospitalScope } from '../lib/scope';
 
 export default function LaboratoryReportsPage() {
   const { hasRole, user } = useAuth();
-  const canView = hasRole('director_laboratory_services', 'executive_secretary', 'lab_admin');
+  const canView = hasRole('director_laboratory_services', 'executive_secretary', 'hospital_admin');
   const hospitalScope = getHospitalScope(user);
   const [items, setItems] = useState<any[]>([]);
   const [pagination, setPagination] = useState<PaginationType>({ page: 1, limit: 50, total: 0, totalPages: 0 });

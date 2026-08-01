@@ -12,7 +12,7 @@ import { getAllDepartments } from '../lib/departments';
 export default function ScorecardsPage() {
   const { hasRole } = useAuth();
   const [activeTab, setActiveTab] = useState<'hospital' | 'department'>('hospital');
-  const isAdmin = hasRole('super_admin') || hasRole('director_prs') || hasRole('prs_admin');
+  const isAdmin = hasRole('super_admin') || hasRole('director_prs') || hasRole('hospital_admin');
 
   const [hospitalScorecards, setHospitalScorecards] = useState<any[]>([]);
   const [deptScorecards, setDeptScorecards] = useState<any[]>([]);

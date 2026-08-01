@@ -13,6 +13,14 @@ if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
       console.error('Invalid GOOGLE_APPLICATION_CREDENTIALS:', error);
       process.exit(1);
     }
+  } else if (fs.existsSync('backend/firebase-service-account.json')) {
+    try {
+      const serviceAccount = JSON.parse(fs.readFileSync('backend/firebase-service-account.json', 'utf8'));
+      appConfig.credential = cert(serviceAccount);
+    } catch (error) {
+      console.error('Invalid backend/firebase-service-account.json:', error);
+      process.exit(1);
+    }
   } else if (fs.existsSync('firebase-service-account.json')) {
     try {
       const serviceAccount = JSON.parse(fs.readFileSync('firebase-service-account.json', 'utf8'));
