@@ -32,15 +32,21 @@ export default function PharmaceuticalReportsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <div className="flex items-center gap-2 text-sm text-slate-500 mb-1">
-          <FileText size={14} className="text-[#008751]" />
-          <span>Pharmaceutical Services</span>
-          <span className="text-slate-300">/</span>
-          <span className="text-slate-800 font-medium">Generated Reports</span>
+      <div className="relative overflow-hidden rounded-3xl p-8 text-white shadow-[0_20px_40px_-15px_rgba(0,135,81,0.3)] bg-gradient-to-br from-[#004d2e] via-[#008751] to-[#00b36b]">
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
+        <div className="absolute -right-20 -top-20 w-64 h-64 bg-white/10 blur-3xl rounded-full mix-blend-overlay"></div>
+        <div className="relative z-10">
+          <div className="flex items-center gap-2 text-emerald-100/90 text-sm mb-3">
+            <FileText size={16} />
+            <span className="tracking-wide uppercase text-xs font-bold">Pharmaceutical Services</span>
+            <span className="opacity-50">/</span>
+            <span className="text-white font-medium tracking-wide uppercase text-xs">Reports</span>
+          </div>
+          <h1 className="text-3xl lg:text-4xl font-extrabold tracking-tight mb-2">Pharmaceutical Reports</h1>
+          <p className="text-emerald-50/80 text-base max-w-xl font-medium leading-relaxed">
+            Simplified overview of generated pharmaceutical reports and pharmacy operations.
+          </p>
         </div>
-        <h1 className="text-2xl font-bold text-slate-900">Pharmaceutical Reports</h1>
-        <p className="text-slate-500 mt-1 text-sm">View generated pharmaceutical reports</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

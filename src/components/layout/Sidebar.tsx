@@ -16,7 +16,7 @@ import {
 import { UserRole } from '../../types';
 import { getUnreadCount, subscribeToNotifications } from '../../lib/notifications';
 import { getUnreadMessageCount, subscribeToThreads } from '../../lib/messaging';
-import { getPendingLocumCount, getOpenStaffingCount } from '../../lib/locums';
+import { getPendingLocumCount } from '../../lib/locums';
 import logoSrc from '../../assets/logo.jpeg';
 
 interface NavItem {
@@ -47,7 +47,6 @@ const sections: { label: string; color: string; items: NavItem[] }[] = [
     items: [
       { to: '/locum-dashboard', label: 'Locum Dashboard', icon: Briefcase, roles: ['super_admin' as UserRole, 'executive_secretary' as UserRole, 'hospital_admin' as UserRole, 'hr_officer' as UserRole, 'director_hr' as UserRole], color: '#0891b2', bg: 'from-cyan-500 to-cyan-600', lightBg: 'bg-cyan-50' },
       { to: '/locum-requests', label: 'Locum Requests', icon: FileText, roles: ['hospital_admin' as UserRole], color: '#0e7490', bg: 'from-cyan-600 to-cyan-700', lightBg: 'bg-cyan-50', badgeKey: 'locum_requests' },
-      { to: '/staffing-requests', label: 'Staffing Requests', icon: Users, roles: ['hospital_admin' as UserRole], color: '#0f766e', bg: 'from-teal-600 to-teal-700', lightBg: 'bg-teal-50', badgeKey: 'staffing_requests' },
       { to: '/locum-assignments', label: 'Assignments', icon: ClipboardCheck, roles: ['hospital_admin' as UserRole, 'hr_officer' as UserRole, 'director_hr' as UserRole], color: '#6d28d9', bg: 'from-violet-500 to-violet-600', lightBg: 'bg-violet-50' },
     ],
   },
@@ -125,7 +124,6 @@ const sections: { label: string; color: string; items: NavItem[] }[] = [
     items: [
       { to: '/notifications', label: 'Notifications', icon: Bell, roles: ['super_admin' as UserRole, 'executive_secretary' as UserRole, 'hospital_admin' as UserRole, 'hr_officer' as UserRole, 'director_hr' as UserRole, 'director_medical_services' as UserRole, 'director_nursing_services' as UserRole, 'director_prs' as UserRole, 'director_pharmaceutical_services' as UserRole, 'director_laboratory_services' as UserRole, 'director_finance' as UserRole], color: '#7c3aed', bg: 'from-violet-500 to-violet-600', lightBg: 'bg-violet-50', badgeKey: 'notifications' },
       { to: '/messages', label: 'Messages', icon: MessageSquare, roles: ['super_admin' as UserRole, 'executive_secretary' as UserRole, 'hospital_admin' as UserRole, 'hr_officer' as UserRole, 'director_hr' as UserRole, 'director_medical_services' as UserRole, 'director_nursing_services' as UserRole, 'director_prs' as UserRole, 'director_pharmaceutical_services' as UserRole, 'director_laboratory_services' as UserRole, 'director_finance' as UserRole], color: '#6366f1', bg: 'from-indigo-500 to-indigo-600', lightBg: 'bg-indigo-50', badgeKey: 'messages' },
-      { to: '/tasks', label: 'Tasks', icon: ListTodo, roles: ['super_admin' as UserRole, 'executive_secretary' as UserRole, 'hospital_admin' as UserRole, 'hr_officer' as UserRole, 'director_hr' as UserRole, 'director_medical_services' as UserRole, 'director_nursing_services' as UserRole, 'director_prs' as UserRole, 'director_pharmaceutical_services' as UserRole, 'director_laboratory_services' as UserRole, 'director_finance' as UserRole], color: '#0d9488', bg: 'from-teal-500 to-teal-600', lightBg: 'bg-teal-50' },
     ],
   },
   {
@@ -145,7 +143,7 @@ interface SidebarProps {
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const { user, hasRole } = useAuth();
-  const [badges, setBadges] = useState<Record<string, number>>({ notifications: 0, messages: 0, locum_requests: 0, staffing_requests: 0 });
+  const [badges, setBadges] = useState<Record<string, number>>({ notifications: 0, messages: 0, locum_requests: 0 });
 
   useEffect(() => {
     if (!user?.id) return;
@@ -169,18 +167,15 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       } catch {}
     });
 
-    // 3. Fallback polling for locum & staffing counts (slower, 15s interval)
-    const fetchLocumStaffing = async () => {
+    // 3. Fallback polling for locum count (slower, 15s interval)
+    const fetchLocumCount = async () => {
       try {
-        const [locumCount, staffingCount] = await Promise.all([
-          getPendingLocumCount(user.hospital_id || ''),
-          getOpenStaffingCount(),
-        ]);
-        setBadges(prev => ({ ...prev, locum_requests: locumCount, staffing_requests: staffingCount }));
+        const locumCount = await getPendingLocumCount(user.hospital_id || '');
+        setBadges(prev => ({ ...prev, locum_requests: locumCount }));
       } catch { /* ignore */ }
     };
-    fetchLocumStaffing();
-    const interval = setInterval(fetchLocumStaffing, 15000);
+    fetchLocumCount();
+    const interval = setInterval(fetchLocumCount, 15000);
 
     return () => {
       unsubNotifs();
@@ -218,31 +213,31 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         </div>
 
         {/* Navigation */}
-        <div className="relative flex-1 overflow-y-auto px-3 py-4 scrollbar-thin">
-          <nav className="space-y-3">
+        <div className="relative flex-1 overflow-y-auto px-2 py-4 scrollbar-thin">
+          <nav className="space-y-5">
             {sections.map((section) => {
               const visibleItems = section.items.filter(item => hasRole(...item.roles));
               if (visibleItems.length === 0) return null;
               return (
-                <div key={section.label}>
-                  <div className="flex items-center gap-2 px-3 mb-1">
-                    <div className="h-px flex-1" style={{ background: `linear-gradient(to right, ${section.color}40, transparent)` }} />
-                    <span className="text-[9px] uppercase tracking-[0.2em] font-semibold px-1" style={{ color: section.color }}>
+                <div key={section.label} className="relative">
+                  <div className="flex items-center gap-3 px-4 mb-2.5">
+                    <div className="h-px flex-1 bg-gradient-to-r from-emerald-500/0 via-emerald-500/20 to-emerald-500/0" />
+                    <span className="text-[10px] uppercase tracking-[0.15em] font-bold text-emerald-800/60 bg-emerald-50/50 px-2.5 py-0.5 rounded-full border border-emerald-100/50 backdrop-blur-sm">
                       {section.label}
                     </span>
-                    <div className="h-px flex-1" style={{ background: `linear-gradient(to left, ${section.color}40, transparent)` }} />
+                    <div className="h-px flex-1 bg-gradient-to-r from-emerald-500/0 via-emerald-500/20 to-emerald-500/0" />
                   </div>
-                  <div className="space-y-0.5">
+                  <div className="space-y-1">
                     {visibleItems.map((item) => (
                       <NavLink
                         key={item.to}
                         to={item.to}
                         onClick={onClose}
                         className={({ isActive }: { isActive: boolean }) =>
-                          `group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative ${
+                          `group flex items-center gap-3 px-3 py-2.5 mx-2 rounded-xl text-sm font-semibold transition-all duration-300 relative overflow-hidden ${
                             isActive
-                              ? 'text-white shadow-md shadow-emerald-900/15'
-                              : 'text-emerald-800/80 hover:text-emerald-950'
+                              ? 'text-white shadow-[0_4px_12px_rgba(4,120,87,0.2)]'
+                              : 'text-slate-600 hover:text-emerald-950 hover:bg-emerald-50/80'
                           }`
                         }
                       >
@@ -250,39 +245,28 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                           <>
                             {isActive && (
                               <>
-                                <span className={`absolute inset-0 rounded-xl bg-gradient-to-r ${item.bg}`} />
-                                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-white/80" />
+                                <span className="absolute inset-0 bg-gradient-to-br from-emerald-600 to-teal-700" />
+                                <span className="absolute right-0 top-0 w-24 h-24 bg-emerald-400/30 rounded-full blur-xl -translate-y-1/2 translate-x-1/2" />
+                                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full bg-emerald-100 shadow-[0_0_10px_rgba(167,243,208,0.8)]" />
                               </>
                             )}
-                            {!isActive && (
-                              <span className="absolute inset-0 rounded-xl bg-white/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200 backdrop-blur-sm" />
-                            )}
-                            <div className={`flex-shrink-0 relative z-10 p-1.5 rounded-lg transition-all duration-200 ${
+                            <div className={`flex-shrink-0 relative z-10 p-2 rounded-lg transition-all duration-300 ${
                               isActive
-                                ? 'bg-white/15'
-                                : 'bg-white/50 group-hover:bg-white group-hover:shadow-sm group-hover:scale-110'
+                                ? 'bg-white/20 shadow-inner'
+                                : 'bg-slate-100/80 text-slate-500 group-hover:bg-white group-hover:text-emerald-600 group-hover:shadow-sm group-hover:scale-110'
                             }`}>
                               <item.icon
-                                size={16}
-                                style={isActive ? { color: 'white' } : { color: item.color }}
-                                className="transition-transform duration-200"
+                                size={18}
+                                strokeWidth={2.5}
+                                className={isActive ? 'text-white' : ''}
                               />
                             </div>
                             <span className="relative z-10">{item.label}</span>
                             {item.badgeKey && badges[item.badgeKey] > 0 && (
-                              <span className="relative z-10 ml-auto flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none shadow-lg">
-                                {badges[item.badgeKey] > 99 ? '99+' : badges[item.badgeKey]}
-                              </span>
-                            )}
-                            {isActive && (
-                              <ChevronRight size={14} className="relative z-10 ml-auto text-white/70" />
-                            )}
-                            {!isActive && (
-                              <div
-                                className="absolute right-3 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 scale-0 group-hover:scale-100"
-                                style={{ backgroundColor: item.color }}
-                              />
-                            )}
+                               <span className={`relative z-10 ml-auto flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold leading-none shadow-sm ${isActive ? 'bg-white text-emerald-700' : 'bg-red-500 text-white'}`}>
+                                 {badges[item.badgeKey] > 99 ? '99+' : badges[item.badgeKey]}
+                               </span>
+                             )}
                           </>
                         )}
                       </NavLink>

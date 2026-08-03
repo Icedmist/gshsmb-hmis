@@ -26,7 +26,7 @@ export default function NursingTrainingPage() {
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
   const [attendanceForm, setAttendanceForm] = useState({ employee_id: '', attended: 'true' });
   const [employees, setEmployees] = useState<any[]>([]);
-  const canManage = hasRole('super_admin') || hasRole('hospital_admin');
+  const canManage = hasRole('super_admin') || hasRole('director_nursing_services');
 
   const loadItems = async (page = 1) => {
     setLoading(true);

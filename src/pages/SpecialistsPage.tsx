@@ -11,7 +11,7 @@ import { getAllDepartments } from '../lib/departments';
 
 export default function SpecialistsPage() {
   const { hasRole } = useAuth();
-  const canManage = hasRole('super_admin', 'hospital_admin');
+  const canManage = hasRole('super_admin', 'director_medical_services');
   const [specialists, setSpecialists] = useState<Specialist[]>([]);
   const [hospitals, setHospitals] = useState<{ id: string; hospital_name: string }[]>([]);
   const [departments, setDepartments] = useState<{ id: string; department_name: string }[]>([]);

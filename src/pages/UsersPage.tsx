@@ -68,7 +68,7 @@ export default function UsersPage() {
         if (form.hospital_id) payload.hospital_id = form.hospital_id;
         await updateUser(editUser.id, payload);
       } else {
-        const token = await auth.currentUser?.getIdToken();
+        const token = await auth.currentUser?.getIdToken(true);
         const res = await fetch('/api/firebase/users', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -226,11 +226,6 @@ export default function UsersPage() {
                 <option value="director_pharmaceutical_services">Director Pharmaceutical Services</option>
                 <option value="director_laboratory_services">Director Medical Laboratory Services</option>
                 <option value="director_finance">Director Finance and Accounts</option>
-                <option value="lab_admin">Lab Admin</option>
-                <option value="pharmacy_admin">Pharmacy Admin</option>
-                <option value="nursing_admin">Nursing Admin</option>
-                <option value="medical_admin">Medical Admin</option>
-                <option value="prs_admin">PRS Admin</option>
               </select>
               <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             </div>

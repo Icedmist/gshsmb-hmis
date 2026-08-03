@@ -10,20 +10,27 @@ export const getUsers = async (
   const filters: FilterConstraint[] = [];
   if (hospitalScope) filters.push({ field: 'hospital_id', op: '==', value: hospitalScope });
 
+  const validRoles = [
+    'super_admin', 'executive_secretary', 'hospital_admin', 'hr_officer', 'director_hr',
+    'director_medical_services', 'director_nursing_services', 'director_prs',
+    'director_pharmaceutical_services', 'director_laboratory_services', 'director_finance'
+  ];
+
   if (search) {
-    const { data } = await getDocsPaginated('users', filters, { field: 'created_at', dir: 'desc' }, limit, page);
+    const { data } = await getDocsPaginated('users', filters, { field: 'created_at', dir: 'desc' }, 500, 1);
     const searchLower = search.toLowerCase();
     const filtered = data.filter((u: any) =>
-      u.full_name?.toLowerCase().includes(searchLower) ||
-      u.email?.toLowerCase().includes(searchLower)
+      validRoles.includes(u.role) &&
+      (u.full_name?.toLowerCase().includes(searchLower) ||
+       u.email?.toLowerCase().includes(searchLower))
     );
     const safe = filtered.map(({ ...rest }: any) => rest);
     return { data: safe, total: safe.length };
   }
 
-  const result = await getDocsPaginated('users', filters, { field: 'created_at', dir: 'desc' }, limit, page);
-  const safe = result.data.map(({ ...rest }: any) => rest);
-  return { data: safe, total: result.total };
+  const result = await getDocsPaginated('users', filters, { field: 'created_at', dir: 'desc' }, 1000, 1);
+  const safe = result.data.filter((u: any) => validRoles.includes(u.role)).map(({ ...rest }: any) => rest);
+  return { data: safe.slice((page - 1) * limit, page * limit), total: safe.length };
 };
 
 export const getUser = async (id: string): Promise<User | null> => {

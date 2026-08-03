@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { getFinancialReports, createFinancialReport, deleteFinancialReport, getFinancialDocuments, createFinancialDocument, deleteFinancialDocument, getFinancialReviews, respondToFinancialReview } from '../lib/finance';
 import { getAllHospitals } from '../lib/hospitals';
@@ -30,7 +30,7 @@ export default function FinancialReportsPage() {
   const isFinance = hasRole('director_finance');
   const isHospitalAdmin = hasRole('hospital_admin');
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     const [r, h] = await Promise.all([getFinancialReports(1, 100, search), getAllHospitals()]);
     let data = r.data;
@@ -38,19 +38,19 @@ export default function FinancialReportsPage() {
     setReports(data);
     setHospitals(h);
     setLoading(false);
-  };
+  }, [search, filterType]);
 
-  const loadDocuments = async () => {
+  const loadDocuments = useCallback(async () => {
     const docs = await getFinancialDocuments(user?.hospital_id || undefined);
     setDocuments(docs);
-  };
+  }, [user?.hospital_id]);
 
-  const loadReviews = async () => {
+  const loadReviews = useCallback(async () => {
     const revs = await getFinancialReviews(user?.hospital_id || undefined);
     setReviews(revs);
-  };
+  }, [user?.hospital_id]);
 
-  useEffect(() => { load(); }, [filterType, load]);
+  useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
     const action = searchParams.get('action');

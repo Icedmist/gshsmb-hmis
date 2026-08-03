@@ -31,7 +31,7 @@ service cloud.firestore {
     }
     
     function isHospitalScopedRole() {
-      return isHospitalAdmin() || isPharmacyAdmin() || isLabAdmin() || isNursingAdmin() || isMedicalAdmin() || isPRSAdmin();
+      return isHospitalAdmin() || isHROfficer();
     }
     
     function isOwnHospitalData() {
@@ -65,25 +65,7 @@ service cloud.firestore {
       return hasUserProfile() && getUserProfile().get('role', '') == 'director_finance';
     }
 
-    function isPharmacyAdmin() {
-      return hasUserProfile() && getUserProfile().get('role', '') == 'pharmacy_admin';
-    }
 
-    function isLabAdmin() {
-      return hasUserProfile() && getUserProfile().get('role', '') == 'lab_admin';
-    }
-
-    function isNursingAdmin() {
-      return hasUserProfile() && getUserProfile().get('role', '') == 'nursing_admin';
-    }
-
-    function isMedicalAdmin() {
-      return hasUserProfile() && getUserProfile().get('role', '') == 'medical_admin';
-    }
-
-    function isPRSAdmin() {
-      return hasUserProfile() && getUserProfile().get('role', '') == 'prs_admin';
-    }
 
     function isDirectorHR() {
       return hasUserProfile() && getUserProfile().get('role', '') == 'director_hr';
@@ -94,7 +76,7 @@ service cloud.firestore {
     }
 
     function canManageContent() {
-      return isAdmin() || isExecutiveSecretary() || isHospitalAdmin() || isHROfficer() || isDirector() || isPharmacyAdmin() || isLabAdmin() || isNursingAdmin() || isMedicalAdmin() || isPRSAdmin();
+      return isAdmin() || isExecutiveSecretary() || isHospitalAdmin() || isHROfficer() || isDirector();
     }
     
     function isOwnUser(resourceId) {
@@ -165,41 +147,108 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Nursing collections
     match /nursingWorkforce/{docId} {
       allow read: if isAuthenticated();
-      allow create, update: if isAdmin() || isExecutiveSecretary() || isDirectorNursing() || isNursingAdmin();
+      allow create, update: if isAdmin() || isExecutiveSecretary() || isDirectorNursing();
       allow delete: if isAdmin() || isExecutiveSecretary();
     }
 
     match /nursingAudits/{docId} {
       allow read: if isAuthenticated();
-      allow create, update: if isAdmin() || isExecutiveSecretary() || isDirectorNursing() || isNursingAdmin();
+      allow create, update: if isAdmin() || isExecutiveSecretary() || isDirectorNursing();
       allow delete: if isAdmin() || isExecutiveSecretary();
     }
 
     match /nursingSupervisionReports/{docId} {
       allow read: if isAuthenticated();
-      allow create, update: if isAdmin() || isExecutiveSecretary() || isDirectorNursing() || isNursingAdmin();
+      allow create, update: if isAdmin() || isExecutiveSecretary() || isDirectorNursing();
       allow delete: if isAdmin() || isExecutiveSecretary();
     }
 
     match /trainingPrograms/{docId} {
       allow read: if isAuthenticated();
-      allow create, update: if isAdmin() || isExecutiveSecretary() || isDirectorNursing() || isNursingAdmin() || isHROfficer() || isDirectorHR();
+      allow create, update: if isAdmin() || isExecutiveSecretary() || isDirectorNursing() || isHROfficer() || isDirectorHR();
       allow delete: if isAdmin() || isExecutiveSecretary();
     }
 
     match /trainingAttendance/{docId} {
       allow read: if isAuthenticated();
-      allow create, update: if isAdmin() || isExecutiveSecretary() || isDirectorNursing() || isNursingAdmin() || isHROfficer() || isDirectorHR();
+      allow create, update: if isAdmin() || isExecutiveSecretary() || isDirectorNursing() || isHROfficer() || isDirectorHR();
       allow delete: if isAdmin() || isExecutiveSecretary();
     }
 
     match /certifications/{docId} {
       allow read: if isAuthenticated();
-      allow create, update: if isAdmin() || isExecutiveSecretary() || isDirectorNursing() || isNursingAdmin();
+      allow create, update: if isAdmin() || isExecutiveSecretary() || isDirectorNursing();
       allow delete: if isAdmin() || isExecutiveSecretary();
+    }
+
+    // Medical & Clinical Services collections
+    match /clinicalGuidelines/{docId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin() || isExecutiveSecretary() || isDirectorMedical();
+    }
+
+    match /clinicalAudits/{docId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin() || isExecutiveSecretary() || isDirectorMedical();
+    }
+
+    match /clinicalAuditFindings/{docId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin() || isExecutiveSecretary() || isDirectorMedical();
+    }
+
+    match /specialists/{docId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin() || isExecutiveSecretary() || isDirectorMedical();
+    }
+
+    match /specialistAssignments/{docId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin() || isExecutiveSecretary() || isDirectorMedical();
+    }
+
+    match /referralStatistics/{docId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin() || isExecutiveSecretary() || isDirectorMedical();
+    }
+
+    match /emergencyReports/{docId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin() || isExecutiveSecretary() || isDirectorMedical();
+    }
+
+    // Pharmaceutical Services collections
+    match /pharmaceuticalAudits/{docId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin() || isExecutiveSecretary() || isDirectorPharmaceutical();
+    }
+
+    match /pharmaceuticalWorkforce/{docId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin() || isExecutiveSecretary() || isDirectorPharmaceutical();
+    }
+
+    match /pharmaceuticalQualityReports/{docId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin() || isExecutiveSecretary() || isDirectorPharmaceutical();
+    }
+
+    match /pharmacovigilanceReports/{docId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin() || isExecutiveSecretary() || isDirectorPharmaceutical();
+    }
+
+    // Laboratory Services collections
+    match /laboratoryAudits/{docId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin() || isExecutiveSecretary() || isDirectorLaboratory();
+    }
+
+    match /laboratoryWorkforce/{docId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin() || isExecutiveSecretary() || isDirectorLaboratory();
     }
 
     // Catch-all for all other specialty collections

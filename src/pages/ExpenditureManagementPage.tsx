@@ -19,7 +19,7 @@ export default function ExpenditureManagementPage() {
     setHospitals(h);
     setLoading(false);
   };
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); }, []);
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();

@@ -1222,11 +1222,6 @@ export const ROLE_OPTIONS = [
   { value: 'director_pharmaceutical_services', label: 'Director Pharmaceutical Services' },
   { value: 'director_laboratory_services', label: 'Director Medical Laboratory Services' },
   { value: 'director_finance', label: 'Director Finance and Accounts' },
-  { value: 'lab_admin', label: 'Lab Admin' },
-  { value: 'pharmacy_admin', label: 'Pharmacy Admin' },
-  { value: 'nursing_admin', label: 'Nursing Admin' },
-  { value: 'medical_admin', label: 'Medical Admin' },
-  { value: 'prs_admin', label: 'PRS Admin' },
 ];
 
 // --- Locum Management ---

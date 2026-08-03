@@ -104,22 +104,58 @@ export const transferEmployee = async (
   toDepartmentId: string,
   transferDate: string,
   reason: string,
-  createdBy: string,
+  requestedBy: string
 ): Promise<void> => {
   const employee = await getDocById('employees', employeeId);
-  if (!employee) throw new Error('Employee not found.');
+  if (!employee) throw new Error('Employee not found');
 
-  await addDocument('employeeTransfers', {
+  await updateDocument('employees', employeeId, {
+    hospital_id: toHospitalId,
+    department_id: toDepartmentId,
+  });
+
+  await addDocument('transfers', {
     employee_id: employeeId,
+    employee_name: employee.full_name,
     from_hospital_id: employee.hospital_id,
     to_hospital_id: toHospitalId,
     from_department_id: employee.department_id,
     to_department_id: toDepartmentId,
     transfer_date: transferDate,
-    reason: reason || null,
+    reason,
     status: 'pending',
-    approved_by: null,
-    approved_at: null,
-    created_by: createdBy,
+    requested_by: requestedBy,
+    created_at: new Date(),
   });
+};
+
+export const exportEmployeesData = async (hospitalScope?: string, position?: string): Promise<any[]> => {
+  const { getDocsAll } = await import('./firestore');
+  const filters: FilterConstraint[] = [];
+  if (hospitalScope) filters.push({ field: 'hospital_id', op: '==', value: hospitalScope });
+  if (position) filters.push({ field: 'position', op: '==', value: position });
+
+  // 1. Fetch raw employees
+  let rawEmployees = await getDocsAll('employees', filters);
+  
+  // 2. Fetch reference data ONCE to avoid O(N) queries
+  const hospitalsDocs = await getDocsAll('hospitals');
+  const deptsDocs = await getDocsAll('departments');
+
+  const hospMap = new Map(hospitalsDocs.map((h: any) => [h.id, h.hospital_name]));
+  const deptMap = new Map(deptsDocs.map((d: any) => [d.id, d.department_name]));
+
+  // 3. Map efficiently
+  return rawEmployees.map((e: any) => ({
+    'Staff ID': e.staff_id || '',
+    'Full Name': e.full_name || '',
+    'Gender': e.gender || '',
+    'Phone': e.phone_number || '',
+    'Email': e.email || '',
+    'Position': e.position || '',
+    'Hospital': hospMap.get(e.hospital_id) || 'Unknown',
+    'Department': deptMap.get(e.department_id) || 'Unknown',
+    'Status': e.status || '',
+    'Employment Date': e.employment_date || ''
+  }));
 };

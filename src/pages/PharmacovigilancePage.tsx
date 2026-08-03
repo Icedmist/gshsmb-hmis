@@ -11,8 +11,8 @@ import { getHospitalScope } from '../lib/scope';
 
 export default function PharmacovigilancePage() {
   const { hasRole, user } = useAuth();
-  const canManage = hasRole('super_admin', 'hospital_admin');
-  const canSubmit = hasRole('super_admin', 'hospital_admin');
+  const canManage = hasRole('super_admin', 'director_pharmaceutical_services');
+  const canSubmit = hasRole('super_admin', 'director_pharmaceutical_services');
   const hospitalScope = getHospitalScope(user);
   const [items, setItems] = useState<any[]>([]);
   const [hospitals, setHospitals] = useState<{ id: string; hospital_name: string }[]>([]);

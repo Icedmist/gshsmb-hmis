@@ -44,115 +44,124 @@ export default function TopNav({ onMenuClick }: TopNavProps) {
 
   return (
     <>
-      <header className="h-16 bg-gradient-to-r from-emerald-950 via-emerald-900 to-teal-900 shadow-md flex items-center justify-between px-4 lg:px-6 sticky top-0 z-30 border-b border-emerald-800">
+      <header className="h-16 bg-white/70 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.03)] flex items-center justify-between px-4 lg:px-6 sticky top-0 z-30 border-b border-emerald-900/5 transition-all duration-300">
         <div className="flex items-center gap-4">
           <button
             onClick={onMenuClick}
-            className="lg:hidden text-emerald-100 hover:text-white p-2 rounded-xl hover:bg-white/10 transition-colors"
+            className="lg:hidden text-emerald-800 hover:text-emerald-950 p-2 rounded-xl hover:bg-emerald-50 transition-colors shadow-sm"
           >
             <Menu size={20} />
           </button>
           <div className="hidden lg:flex items-center gap-3">
             <div className="w-2 h-2 rounded-full relative">
-              <div className="absolute inset-0 rounded-full bg-amber-400 animate-ping opacity-40" />
-              <div className="absolute inset-0 rounded-full bg-amber-400" />
+              <div className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-40" />
+              <div className="absolute inset-0 rounded-full bg-emerald-500" />
             </div>
-            <span className="text-xs text-emerald-200 font-semibold uppercase tracking-wider">
+            <span className="text-xs text-emerald-800 font-bold uppercase tracking-wider bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">
               {user?.role?.replace(/_/g, ' ')}
             </span>
             {hospitalName && (
               <>
-                <div className="w-px h-4 bg-emerald-700 mx-1" />
-                <span className="text-xs text-emerald-100 flex items-center gap-1 font-medium">
-                  <Building2 size={12} className="text-amber-400" /> {hospitalName}
+                <div className="w-px h-4 bg-slate-200 mx-1" />
+                <span className="text-xs text-slate-600 flex items-center gap-1.5 font-semibold bg-white px-2 py-1 rounded-md border border-slate-100 shadow-sm">
+                  <Building2 size={12} className="text-emerald-600" /> {hospitalName}
                 </span>
               </>
             )}
-            <div className="w-px h-4 bg-emerald-700 mx-1" />
-            <span className="text-xs text-emerald-300/70 tabular-nums font-medium">
+            <div className="w-px h-4 bg-slate-200 mx-1" />
+            <span className="text-xs text-slate-500 tabular-nums font-semibold">
               {new Date().toLocaleDateString('en-NG', { weekday: 'short', month: 'short', day: 'numeric' })}
             </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <Link
             to="/settings"
-            className="hidden sm:flex items-center gap-2 text-xs text-emerald-100 hover:text-white px-3 py-2 rounded-xl hover:bg-white/10 transition-colors font-medium"
+            className="hidden sm:flex items-center gap-2 text-xs text-slate-600 hover:text-emerald-700 px-3 py-2 rounded-xl hover:bg-emerald-50 hover:shadow-sm border border-transparent hover:border-emerald-100 transition-all font-semibold"
           >
-            <Shield size={14} className="text-amber-400" />
+            <Shield size={14} className="text-emerald-500" />
             <span>Profile</span>
           </Link>
 
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setShowMenu(!showMenu)}
-              className="flex items-center gap-2.5 text-sm hover:bg-white/5 transition-all rounded-xl pl-2.5 pr-2 py-1.5 border border-transparent hover:border-emerald-700/50"
+              className="flex items-center gap-3 hover:bg-white transition-all rounded-2xl pl-3 pr-2 py-1.5 border border-transparent hover:border-slate-200 hover:shadow-sm active:scale-[0.98]"
             >
               <div className="hidden sm:block text-right">
-                <p className="text-sm font-semibold text-white leading-tight">{user?.full_name}</p>
-                <p className="text-[11px] text-emerald-300/80 capitalize">
+                <p className="text-sm font-bold text-slate-800 leading-tight">{user?.full_name}</p>
+                <p className="text-[10px] text-slate-500 font-medium capitalize mt-0.5">
                   {user?.role?.replace(/_/g, ' ')}
-                  {hospitalName && <span className="text-amber-400 ml-1">· {hospitalName}</span>}
+                  {hospitalName && <span className="text-emerald-600 ml-1">· {hospitalName}</span>}
                 </p>
               </div>
-              <div className="w-9 h-9 rounded-xl overflow-hidden shadow-md ring-2 ring-emerald-500/30 relative bg-gradient-to-br from-amber-400 to-amber-600">
+              <div className="w-9 h-9 rounded-xl overflow-hidden shadow-sm ring-2 ring-emerald-100 relative bg-gradient-to-br from-emerald-50 to-emerald-100 flex-shrink-0">
                 {user?.avatar_url ? (
                   <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <span className="text-white font-bold text-sm drop-shadow-md">{user?.full_name?.charAt(0) || 'U'}</span>
+                    <span className="text-emerald-700 font-black text-sm drop-shadow-sm">{user?.full_name?.charAt(0) || 'U'}</span>
                   </div>
                 )}
               </div>
-              <ChevronDown size={14} className={`text-emerald-400 hidden sm:block transition-transform duration-200 ${showMenu ? 'rotate-180' : ''}`} />
+              <ChevronDown size={14} className={`text-slate-400 hidden sm:block transition-transform duration-300 ${showMenu ? 'rotate-180' : ''}`} />
             </button>
 
             {showMenu && (
-              <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl shadow-slate-900/10 border border-slate-200 z-50 py-1.5 overflow-hidden animate-scale-in">
-                    <div className="px-4 py-4 border-b border-slate-100">
-                      <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-xl overflow-hidden ring-2 ring-emerald-200/60 shadow-sm relative bg-gradient-to-br from-emerald-600 to-emerald-800">
+              <div className="absolute right-0 mt-3 w-72 bg-white/95 backdrop-blur-xl rounded-3xl shadow-[0_20px_40px_rgba(0,0,0,0.08)] border border-slate-200/60 z-50 overflow-hidden animate-scale-in origin-top-right">
+                    <div className="px-5 py-5 border-b border-slate-100 bg-gradient-to-br from-slate-50/50 to-white">
+                      <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 rounded-2xl overflow-hidden ring-4 ring-emerald-50 shadow-md relative bg-gradient-to-br from-emerald-100 to-emerald-200 flex-shrink-0">
                           {user?.avatar_url ? (
                             <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
-                              <span className="text-white font-bold text-base">{user?.full_name?.charAt(0) || 'U'}</span>
+                              <span className="text-emerald-700 font-black text-xl">{user?.full_name?.charAt(0) || 'U'}</span>
                             </div>
                           )}
                         </div>
-                        <div>
-                          <p className="text-sm font-semibold text-slate-900">{user?.full_name}</p>
-                          <p className="text-xs text-slate-400">{user?.email}</p>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-base font-extrabold text-slate-800 truncate">{user?.full_name}</p>
+                          <p className="text-xs font-medium text-slate-500 truncate mt-0.5">{user?.email}</p>
                           {hospitalName && (
-                            <p className="text-xs text-emerald-600 font-medium mt-0.5 flex items-center gap-1">
+                            <p className="text-[10px] font-bold text-emerald-700 mt-1.5 flex items-center gap-1.5 bg-emerald-50 px-2 py-1 rounded-md w-fit border border-emerald-100">
                               <Building2 size={10} /> {hospitalName}
                             </p>
                           )}
                         </div>
                       </div>
                     </div>
-                <div className="px-2 py-1">
+                <div className="px-3 py-2">
                   <Link
                     to="/settings"
                     onClick={() => setShowMenu(false)}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-slate-700 hover:bg-emerald-50 rounded-xl transition-colors font-medium"
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-emerald-50/80 hover:text-emerald-800 rounded-2xl transition-all font-semibold group"
                   >
-                    <User size={16} className="text-slate-400" /> Profile Settings
+                    <div className="p-2 bg-slate-100 rounded-lg group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-colors">
+                      <User size={16} />
+                    </div>
+                    Profile Settings
                   </Link>
                   <button
                     onClick={() => { setShowChangePassword(true); setShowMenu(false); }}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-slate-700 hover:bg-emerald-50 rounded-xl transition-colors font-medium"
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-amber-50/80 hover:text-amber-800 rounded-2xl transition-all font-semibold group"
                   >
-                    <KeyRound size={16} className="text-slate-400" /> Change Password
+                    <div className="p-2 bg-slate-100 rounded-lg group-hover:bg-amber-100 group-hover:text-amber-600 transition-colors">
+                      <KeyRound size={16} />
+                    </div>
+                    Change Password
                   </button>
                 </div>
-                <div className="border-t border-slate-100 px-2 py-1">
+                <div className="border-t border-slate-100 px-3 py-2 bg-slate-50/50">
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 rounded-xl transition-colors font-medium"
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-rose-600 hover:bg-rose-50 hover:text-rose-700 rounded-2xl transition-all font-semibold group"
                   >
-                    <LogOut size={16} /> Logout
+                    <div className="p-2 bg-rose-50 rounded-lg group-hover:bg-rose-100 group-hover:text-rose-700 transition-colors">
+                      <LogOut size={16} />
+                    </div>
+                    Secure Logout
                   </button>
                 </div>
               </div>

@@ -23,7 +23,7 @@ export default function NursingWorkforcePage() {
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
   const [summary, setSummary] = useState<any[]>([]);
-  const canManage = hasRole('super_admin') || hasRole('hospital_admin');
+  const canManage = hasRole('super_admin') || hasRole('director_nursing_services');
 
   const loadItems = async (page = 1) => {
     setLoading(true);

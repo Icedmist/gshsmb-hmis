@@ -21,7 +21,6 @@ import SettingsPage from './pages/SettingsPage';
 import TransfersPage from './pages/TransfersPage';
 import LocumDashboardPage from './pages/LocumDashboardPage';
 import LocumRequestsPage from './pages/LocumRequestsPage';
-import StaffingRequestsPage from './pages/StaffingRequestsPage';
 import LocumAssignmentsPage from './pages/LocumAssignmentsPage';
 import ReportsPage from './pages/ReportsPage';
 import ClinicalGuidelinesPage from './pages/ClinicalGuidelinesPage';
@@ -65,7 +64,6 @@ import AssetManagementPage from './pages/AssetManagementPage';
 import FinancialCompliancePage from './pages/FinancialCompliancePage';
 import FinancialAnalyticsPage from './pages/FinancialAnalyticsPage';
 import NotificationsPage from './pages/NotificationsPage';
-import TasksPage from './pages/TasksPage';
 import DocumentsPage from './pages/DocumentsPage';
 import WorkflowsPage from './pages/WorkflowsPage';
 import ApprovalsPage from './pages/ApprovalsPage';
@@ -92,7 +90,6 @@ export default function App() {
             <Route path="/transfers" element={<TransfersPage />} />
             <Route path="/locum-dashboard" element={<LocumDashboardPage />} />
             <Route path="/locum-requests" element={<LocumRequestsPage />} />
-            <Route path="/staffing-requests" element={<StaffingRequestsPage />} />
             <Route path="/locum-assignments" element={<LocumAssignmentsPage />} />
             <Route path="/reports" element={<ReportsPage />} />
             <Route path="/clinical-guidelines" element={<ClinicalGuidelinesPage />} />
@@ -138,7 +135,6 @@ export default function App() {
             <Route path="/financial-compliance" element={<RequireRole roles={['director_finance']}><FinancialCompliancePage /></RequireRole>} />
             <Route path="/financial-analytics" element={<RequireRole roles={['director_finance','executive_secretary','director_prs']}><FinancialAnalyticsPage /></RequireRole>} />
             <Route path="/notifications" element={<NotificationsPage />} />
-            <Route path="/tasks" element={<TasksPage />} />
             <Route path="/documents" element={<DocumentsPage />} />
             <Route path="/workflows" element={<WorkflowsPage />} />
             <Route path="/approvals" element={<ApprovalsPage />} />

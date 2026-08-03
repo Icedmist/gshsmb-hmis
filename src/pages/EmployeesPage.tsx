@@ -3,10 +3,11 @@ import { Employee, Pagination as PaginationType } from '../types';
 import Modal from '../components/common/Modal';
 import Pagination from '../components/common/Pagination';
 import { useAuth } from '../contexts/AuthContext';
-import { Plus, Search, Pencil, Trash2, ArrowRightLeft, Users, ChevronDown, UserCheck, UserX, User } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, ArrowRightLeft, Users, ChevronDown, UserCheck, UserX, User, Download } from 'lucide-react';
 import { POSITION_CATEGORIES } from '../types';
 import StatCard from '../components/common/StatCard';
-import { getEmployees, createEmployee, updateEmployee, deleteEmployee, transferEmployee } from '../lib/employees';
+import { getEmployees, createEmployee, updateEmployee, deleteEmployee, transferEmployee, exportEmployeesData } from '../lib/employees';
+import * as XLSX from 'xlsx';
 import { getAllHospitals } from '../lib/hospitals';
 import { getAllDepartments } from '../lib/departments';
 import { getHospitalScope } from '../lib/scope';
@@ -28,6 +29,9 @@ export default function EmployeesPage() {
   const [editEmp, setEditEmp] = useState<Employee | null>(null);
   const [form, setForm] = useState({ staff_id: '', full_name: '', gender: '', phone_number: '', email: '', position: '', department_id: '', hospital_id: '', employment_date: '' });
   const [transferForm, setTransferForm] = useState({ to_hospital_id: '', to_department_id: '', transfer_date: '', reason: '' });
+
+  const [isExporting, setIsExporting] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   const hospitalScope = getHospitalScope(user);
 
@@ -137,6 +141,29 @@ export default function EmployeesPage() {
     } catch (err: any) { alert(err.message); }
   };
 
+  const handleExport = async (category?: string) => {
+    try {
+      setIsExporting(true);
+      setShowExportMenu(false);
+      const data = await exportEmployeesData(hospitalScope, category);
+      if (data.length === 0) {
+        alert('No data found to export.');
+        return;
+      }
+      
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Employees");
+      
+      const fileName = category ? `Employees_${category.replace(/\s+/g, '_')}.xlsx` : 'All_Employees.xlsx';
+      XLSX.writeFile(wb, fileName);
+    } catch (error: any) {
+      alert(`Export failed: ${error.message}`);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -150,7 +177,44 @@ export default function EmployeesPage() {
           <h1 className="text-2xl font-bold text-slate-900">Employees</h1>
           <p className="text-slate-500 mt-1 text-sm">Manage staff records across all hospitals</p>
         </div>
-        {canManage && <button onClick={openCreate} className="btn-primary"><Plus size={18} /> Add Employee</button>}
+        <div className="flex items-center gap-3">
+          {hasRole('executive_secretary', 'super_admin', 'director_hr', 'hr_officer') && (
+            <div className="relative">
+              <button 
+                onClick={() => setShowExportMenu(!showExportMenu)} 
+                disabled={isExporting}
+                className="btn-secondary"
+              >
+                <Download size={18} />
+                {isExporting ? 'Exporting...' : 'Export to Excel'}
+                <ChevronDown size={14} />
+              </button>
+              {showExportMenu && (
+                <div className="absolute right-0 mt-2 w-48 bg-white/80 backdrop-blur-xl border border-slate-200/50 rounded-2xl shadow-xl z-50 overflow-hidden">
+                  <div className="p-1">
+                    <button 
+                      onClick={() => handleExport()}
+                      className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-emerald-700 rounded-xl transition-colors font-medium"
+                    >
+                      All Employees
+                    </button>
+                    <div className="h-px bg-slate-100 my-1 mx-2" />
+                    {POSITION_CATEGORIES.map(cat => (
+                      <button 
+                        key={cat}
+                        onClick={() => handleExport(cat)}
+                        className="w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-emerald-600 rounded-xl transition-colors"
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          {canManage && <button onClick={openCreate} className="btn-primary"><Plus size={18} /> Add Employee</button>}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

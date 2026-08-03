@@ -30,12 +30,12 @@ export const createUser = functions.https.onCall(async (data: CreateUserRequest,
     throw new functions.https.HttpsError('invalid-argument', 'Email, password, full name, and role are required.');
   }
 
-  const validRoles = ['super_admin', 'executive_secretary', 'hospital_admin', 'hr_officer', 'director_hr', 'director_medical_services', 'director_nursing_services', 'director_prs', 'director_pharmaceutical_services', 'director_laboratory_services', 'director_finance', 'lab_admin', 'pharmacy_admin', 'nursing_admin', 'medical_admin', 'prs_admin'];
+  const validRoles = ['super_admin', 'executive_secretary', 'hospital_admin', 'hr_officer', 'director_hr', 'director_medical_services', 'director_nursing_services', 'director_prs', 'director_pharmaceutical_services', 'director_laboratory_services', 'director_finance'];
   if (!validRoles.includes(data.role)) {
     throw new functions.https.HttpsError('invalid-argument', 'Invalid role.');
   }
 
-  const hospitalScopedRoles = ['hospital_admin', 'hr_officer', 'lab_admin', 'pharmacy_admin', 'nursing_admin', 'medical_admin', 'prs_admin'];
+  const hospitalScopedRoles = ['hospital_admin', 'hr_officer'];
   if (hospitalScopedRoles.includes(data.role) && !data.hospitalId) {
     throw new functions.https.HttpsError('invalid-argument', `Hospital ID is required for ${data.role} role.`);
   }
